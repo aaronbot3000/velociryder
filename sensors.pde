@@ -51,11 +51,6 @@ uint8_t i;
 void init_sensors() {
 	analogReference(EXTERNAL);
 
-	pinMode(MOTOR_TX_PIN, OUTPUT);
-	Motors.begin(SABER_BAUDRATE);
-	delay(2000);
-	Motors.print(STOP, BYTE);
-
 	// set digital inputs
 	pinMode(OHSHITSWITCH, INPUT);
 	pinMode(BALANCEUP, INPUT);
@@ -92,7 +87,7 @@ uint8_t read_bal_switch() {
 }
 
 bool read_shit_switch() {
-	return digitalRead(BALANCEDOWN);
+	return digitalRead(OHSHITSWITCH);
 }
 
 float ygyro_sum;
@@ -100,6 +95,7 @@ float read_ygyro() {
 	ygyro_sum = 0;
 	for (i=0; i<7; i++) {
 		ygyro_sum += analogRead(YGYRO4);
+	}
 	return ygyro_sum * DIV7;
 }
 
@@ -108,6 +104,7 @@ float read_zgyro() {
 	zgyro_sum = 0;
 	for (i=0; i<7; i++) {
 		zgyro_sum += analogRead(ZGYRO);
+	}
 	return zgyro_sum * DIV7;
 }
 
@@ -116,5 +113,6 @@ float read_turnpot() {
 	turnpot_sum = 0;
 	for (i=0; i<7; i++) {
 		turnpot_sum += analogRead(TURNPOT);
+	}
 	return turnpot_sum * DIV7;
 }

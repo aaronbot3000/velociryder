@@ -39,8 +39,15 @@ void signal_go_time() {
 	digitalWrite(OVERSPEED2, HIGH);
 }
 
+void now_going() {
+	// Turn off the lights
+	digitalWrite(OVERSPEED1, HIGH);
+	digitalWrite(OVERSPEED2, HIGH);
+}
+
 float softStartMult = 1;
-void set_motors(int16_t motorL, int16_t motorR){
+void send_motor_command(int16_t motorL, int16_t motorR){
+
 	// Activate the overspeed lights
 	if (abs(motorL) > OVERSPEED_LEVEL_2 || abs(motorR) > OVERSPEED_LEVEL_2)
 		digitalWrite(OVERSPEED2, LOW);
@@ -62,8 +69,8 @@ void set_motors(int16_t motorL, int16_t motorR){
 		motors.print(STOP, BYTE);
 	}
 	else {
-		motorL *= softStartMult;
-		motorR *= softStartMult;
+		//motorL *= softStartMult;
+		//motorR *= softStartMult;
 		motorL = map(motorL, -100, 100, MOTOR1_MAX_BACK, MOTOR1_MAX_FRONT);
 		motorR = map(motorR, -100, 100, MOTOR2_MAX_BACK, MOTOR2_MAX_FRONT);
 
