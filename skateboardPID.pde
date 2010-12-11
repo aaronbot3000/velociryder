@@ -27,9 +27,9 @@
 #define D_BALANCE 0.8 // units
 
 // PID control constants
-#define PGAIN 1.3
-#define IGAIN .02
-#define DGAIN .9
+#define PGAIN .8
+#define IGAIN .01
+#define DGAIN 1.0
 
 #define INTEG_BUFFER_SIZE 128
 
@@ -143,21 +143,20 @@ void run_magic() {
 	p_angle = angle;
 	ygyro = (read_ygyro() - ygyro_ref) * GYROTODEG;
 	accl = (read_accl() - ACCL_CENTER) * ACCLTODEG;
-	angle = (angle + ygyro * CYCLE_TIME) * (1 - ACCL_MIX) + accl * ACCL_MIX;
 	
 	// P
-	level = PGAIN * angle;
+	level = PGAIN * (level * (1 - ACCL_MIX) + accl * ACCL_MIX);
 
 	// I
 	integral -= integ_buffer[ibuffer_ind];
-	integ_buffer[ibuffer_ind] = angle;
+	integ_buffer[ibuffer_ind] = level;
 	integral += integ_buffer[ibuffer_ind];
 	ibuffer_ind = (ibuffer_ind + 1) % INTEG_BUFFER_SIZE;
 
 	level += IGAIN * integral;
 
 	// D
-	level += DGAIN * (angle - p_angle);
+	level += DGAIN * ygyro;
 
 	// Testing the Savitsky Golay filter for motor levels as well
 	for (filt_ind=0; filt_ind<6; filt_ind++) {
@@ -185,8 +184,8 @@ int16_t motorL;
 int16_t motorR;
 void set_motors()
 {
-	motorL = 1.3*level;// - steer;
-	motorR = 1.3*level;// + steer;
+	motorL = 2*level;// - steer;
+	motorR = 2*level;// + steer;
 
 	motorL = constrain(motorL, -40, 40);
 	motorR = constrain(motorR, -40, 40);
@@ -245,7 +244,7 @@ void printStatusToSerial()
 	{
 		Serial.println("=========");
 		Serial.print("lvl: ");
-		Serial.println(level);
+		Serial.println(motorL);
 		Serial.print("ang: ");
 		Serial.println(angle);
 		Serial.print("accl: ");
