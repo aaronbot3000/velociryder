@@ -27,8 +27,25 @@
 #define YACCL 3
 #define TURNPOT 4
 
-void init() {
+// input defines
+#define OHSHITSWITCH 12
+#define BALANCEUP    11
+#define BALANCEDOWN  10
+
+uint8_t i;
+
+void init_sensors() {
 	analogReference(EXTERNAL);
+
+	pinMode(MOTOR_TX_PIN, OUTPUT);
+	Motors.begin(SABER_BAUDRATE);
+	delay(2000);
+	Motors.print(STOP, BYTE);
+
+	// set digital inputs
+	pinMode(OHSHITSWITCH, INPUT);
+	pinMode(BALANCEUP, INPUT);
+	pinMode(BALANCEDOWN, INPUT);
 }
 
 float accl_filt;
@@ -36,8 +53,8 @@ float accl_savgolay_filt[7];
 float read_accl() {
 	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
 	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
-	for (int x=0; x<6; x++)
-		accl_savgolay_filt[x] = accl_savgolay_filt[x+1];
+	for (i=0; i<6; i++)
+		accl_savgolay_filt[i] = accl_savgolay_filt[i+1];
 	accl_savgolay_filt[6] = analogRead(YACCL);
 
 	// Magic numbers!!!
@@ -52,10 +69,22 @@ float read_accl() {
 	return accl_filt;
 }
 
+uint8_t get_bal_switch() {
+	if (digitalRead(BALANCEUP))
+		return 1;
+	else if (digitalRead(BALANCEDOWN))
+		return -1;
+	return 0;
+}
+
+bool get_shit_switch() {
+	return digitalRead(BALANCEDOWN);
+}
+
 float ygyro_sum;
 float read_ygyro() {
 	ygyro_sum = 0;
-	for (int x=0; x<7; x++) {
+	for (i=0; i<7; i++) {
 		ygyro_sum += analogRead(YGYRO4);
 	return ygyro_sum * DIV7;
 }
@@ -63,7 +92,7 @@ float read_ygyro() {
 float zgyro_sum;
 float read_zgyro() {
 	zgyro_sum = 0;
-	for (int x=0; x<7; x++) {
+	for (i=0; i<7; i++) {
 		zgyro_sum += analogRead(ZGYRO);
 	return zgyro_sum * DIV7;
 }
@@ -71,7 +100,7 @@ float read_zgyro() {
 float turnpot_sum;
 float read_turnpot() {
 	turnpot_sum = 0;
-	for (int x=0; x<7; x++) {
+	for (i=0; i<7; i++) {
 		turnpot_sum += analogRead(TURNPOT);
 	return turnpot_sum * DIV7;
 }
