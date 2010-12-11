@@ -20,6 +20,20 @@
 
 #define DIV7      0.14285714285714 // answer to 1/7
 
+//IMU constants
+//ARef at 3.34 V
+// 100 deg per second
+// 2.5 mV per (deg per second)
+#define GYROTODEG 1.3046875  // degrees per unit
+
+// 400 deg per second
+// 10 mV per (deg per second)
+#define GYROTODEG4 3.26171875  // degrees per unit
+
+// .971V at 45 degrees
+// 2.074 at 135 degrees
+#define ACCLTODEG .26614205575702629  // degrees per unit
+
 // sensor defines
 #define YGYRO 0
 #define YGYRO4 1
@@ -69,7 +83,7 @@ float read_accl() {
 	return accl_filt;
 }
 
-uint8_t get_bal_switch() {
+uint8_t read_bal_switch() {
 	if (digitalRead(BALANCEUP))
 		return 1;
 	else if (digitalRead(BALANCEDOWN))
@@ -77,7 +91,7 @@ uint8_t get_bal_switch() {
 	return 0;
 }
 
-bool get_shit_switch() {
+bool read_shit_switch() {
 	return digitalRead(BALANCEDOWN);
 }
 

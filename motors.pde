@@ -1,4 +1,4 @@
-// Motor Controller defines
+// motor Controller defines
 #define MOTOR_TX_PIN 7
 #define MOTOR_RX_PIN 6
 
@@ -19,7 +19,7 @@
 #define OVERSPEED_LEVEL_1 70
 #define OVERSPEED_LEVEL_2 90
 
-SoftwareSerial Motors = SoftwareSerial(MOTOR_RX_PIN, MOTOR_TX_PIN);
+SoftwareSerial motors = SoftwareSerial(MOTOR_RX_PIN, MOTOR_TX_PIN);
 
 void init_motors() {
 	pinMode(OVERSPEED1, OUTPUT);
@@ -29,40 +29,45 @@ void init_motors() {
 	digitalWrite(OVERSPEED2, LOW);
 
 	pinMode(MOTOR_TX_PIN, OUTPUT);
-	Motors.begin(SABER_BAUDRATE);
+	motors.begin(SABER_BAUDRATE);
 	delay(2000);
-	Motors.print(STOP, BYTE);
+	motors.print(STOP, BYTE);
+}
+
+void signal_go_time() {
+	// Signal we are good to go
+	digitalWrite(OVERSPEED2, HIGH);
 }
 
 float softStartMult = 1;
-
-void set_motors(int16_t motor1, int16_t motor2){
-	if (abs(motor1) > OVERSPEED_LEVEL_2 || abs(motor2) > OVERSPEED_LEVEL_2)
+void set_motors(int16_t motorL, int16_t motorR){
+	// Activate the overspeed lights
+	if (abs(motorL) > OVERSPEED_LEVEL_2 || abs(motorR) > OVERSPEED_LEVEL_2)
 		digitalWrite(OVERSPEED2, LOW);
-	if (abs(motor1) > OVERSPEED_LEVEL_1 || abs(motor2) > OVERSPEED_LEVEL_1)
+	if (abs(motorL) > OVERSPEED_LEVEL_1 || abs(motorR) > OVERSPEED_LEVEL_1)
 		digitalWrite(OVERSPEED1, LOW);
 	else {
 		digitalWrite(OVERSPEED1, HIGH);
 		digitalWrite(OVERSPEED2, HIGH);
 	}
 
+	// Slowly come back from a killswitch release
 	if (softStartMult < 1)
 		softStartMult += 0.01;
 
-	if (!get_shit_switch()) {
-		motor1 = 0;
-		motor2 = 0;
+	if (!read_shit_switch()) {
+		motorL = 0;
+		motorR = 0;
 		softStartMult = .2;
-		Motors.print(STOP, BYTE);
+		motors.print(STOP, BYTE);
 	}
-
 	else {
-		motor1 *= softStartMult;
-		motor2 *= softStartMult;
-		motor1 = map(motor1, -100, 100, MOTOR1_MAX_BACK, MOTOR1_MAX_FRONT);
-		motor2 = map(motor2, -100, 100, MOTOR2_MAX_BACK, MOTOR2_MAX_FRONT);
+		motorL *= softStartMult;
+		motorR *= softStartMult;
+		motorL = map(motorL, -100, 100, MOTOR1_MAX_BACK, MOTOR1_MAX_FRONT);
+		motorR = map(motorR, -100, 100, MOTOR2_MAX_BACK, MOTOR2_MAX_FRONT);
 
-		Motors.print((uint8_t)motor1, BYTE);
-		Motors.print((uint8_t)motor2, BYTE);
+		motors.print((uint8_t)motorL, BYTE);
+		motors.print((uint8_t)motorR, BYTE);
 	}
 }
