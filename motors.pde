@@ -65,6 +65,7 @@ void send_motor_command(int16_t motorL, int16_t motorR){
 	if (!read_shit_switch()) {
 		motorL = 0;
 		motorR = 0;
+		reset_integ_buffer();
 		softStartMult = .2;
 		motors.print(STOP, BYTE);
 	}

@@ -27,17 +27,18 @@
 #define D_BALANCE 0.8 // units
 
 // PID control constants
-#define PGAIN .7
-#define IGAIN .01
-#define DGAIN .05
+#define PGAIN 1.3
+#define IGAIN .02
+#define DGAIN .9
 
-#define INTEG_BUFFER_SIZE 32
+#define INTEG_BUFFER_SIZE 128
 
 // Other control constants
 #define ACCL_MIX .05
 
 #define GYROTODEG 1.3046875  // degrees per unit
 #define ACCLTODEG .26614205575702629  // degrees per unit
+#define CYCLE_TIME .01
 
 // Turning constants
 #define TURNPOT_MARGIN 7
@@ -133,24 +134,33 @@ float old_level;
 float integ_buffer[INTEG_BUFFER_SIZE];
 uint8_t ibuffer_ind = 0;
 float integral = 0;
+float p_angle = 0;
+float angle = 0;
+float ygyro;
+float accl;
 
 void run_magic() {
+	p_angle = angle;
+	ygyro = (read_ygyro() - ygyro_ref) * GYROTODEG;
+	accl = (read_accl() - ACCL_CENTER) * ACCLTODEG;
+	angle = (angle + ygyro * CYCLE_TIME) * (1 - ACCL_MIX) + accl * ACCL_MIX;
+	
 	// P
-	level = PGAIN * ((1 - ACCL_MIX) * level + ACCL_MIX * (read_accl() - ACCL_CENTER));
+	level = PGAIN * angle;
 
 	// I
 	integral -= integ_buffer[ibuffer_ind];
-	integ_buffer[ibuffer_ind] = level;
+	integ_buffer[ibuffer_ind] = angle;
 	integral += integ_buffer[ibuffer_ind];
 	ibuffer_ind = (ibuffer_ind + 1) % INTEG_BUFFER_SIZE;
 
 	level += IGAIN * integral;
 
 	// D
-	level += DGAIN * (read_ygyro() - ygyro_ref);
+	level += DGAIN * (angle - p_angle);
 
 	// Testing the Savitsky Golay filter for motor levels as well
-	for (int filt_ind=0; filt_ind<6; filt_ind++) {
+	for (filt_ind=0; filt_ind<6; filt_ind++) {
 		filt_level[filt_ind] = filt_level[filt_ind+1];
 	}
 	filt_level[6] = level;
@@ -165,15 +175,21 @@ void run_magic() {
 			 (-2*filt_level[6]))/21.0; 
 }
 
+void reset_integ_buffer() {
+	for (filt_ind = 0; filt_ind<INTEG_BUFFER_SIZE; filt_ind++)
+		integ_buffer[filt_ind] = 0;
+	integral = 0;
+}
+
 int16_t motorL;
 int16_t motorR;
 void set_motors()
 {
-	motorL = level - steer;
-	motorR = level + steer;
+	motorL = 1.3*level;// - steer;
+	motorR = 1.3*level;// + steer;
 
-	motorL = constrain(motorL, -20, 20);
-	motorR = constrain(motorR, -20, 20);
+	motorL = constrain(motorL, -40, 40);
+	motorR = constrain(motorR, -40, 40);
 
 	send_motor_command(motorL, motorR);
 
@@ -230,14 +246,12 @@ void printStatusToSerial()
 		Serial.println("=========");
 		Serial.print("lvl: ");
 		Serial.println(level);
-		Serial.print("mL: ");
-		Serial.println(motorL);
-		Serial.print("mR: ");
-		Serial.println(motorR);
+		Serial.print("ang: ");
+		Serial.println(angle);
 		Serial.print("accl: ");
-		Serial.println(read_accl() - ACCL_CENTER);
+		Serial.println((read_accl() - ACCL_CENTER) * ACCLTODEG);
 		Serial.print("gyro: ");
-		Serial.println(read_ygyro()-ygyro_ref);
+		Serial.println((read_ygyro()-ygyro_ref) * GYROTODEG);
 	}
 }
 #endif
