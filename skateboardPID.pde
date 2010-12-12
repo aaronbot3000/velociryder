@@ -27,15 +27,15 @@
 #define D_BALANCE 0.8 // units
 
 // PID control constants
-#define PGAIN 1.00
-#define IGAIN 0.0004
+#define PGAIN 0.95
 #define GGAIN 0.03
-#define DGAIN 0.0
-
+#define IGAIN 0.0004
+#define DGAIN 0.005
 
 // Other control constants
 #define INTEG_BUFFER_SIZE 128
-#define ACCL_MIX .05
+#define ACCL_MIX .005
+#define ACCL_NORM 10
 
 #define GYROTODEG 1.3046875  // degrees per unit
 #define ACCLTODEG .26614205575702629  // degrees per unit
@@ -146,7 +146,7 @@ void run_magic() {
 	accl = (read_accl() - ACCL_CENTER) * ACCLTODEG;
 	
 	// P
-	level = PGAIN * (level * (1 - ACCL_MIX) + accl * ACCL_MIX);
+	level = PGAIN * (level * (1 - ACCL_MIX) + ACCL_NORM * accl * ACCL_MIX);
 	level += GGAIN * ygyro;
 
 	// I
@@ -155,7 +155,7 @@ void run_magic() {
 	integral += integ_buffer[ibuffer_ind];
 	ibuffer_ind = (ibuffer_ind + 1) % INTEG_BUFFER_SIZE;
 
-	level += IGAIN * integral;
+	level += constrain(IGAIN * integral, -100, 100);
 
 	// D
 	level += DGAIN * (level - p_level);
@@ -247,6 +247,8 @@ void printStatusToSerial()
 		Serial.println("=========");
 		Serial.print("lvl: ");
 		Serial.println(level);
+		Serial.print("mL: ");
+		Serial.println(motorL);
 		Serial.print("accl: ");
 		Serial.println((read_accl() - ACCL_CENTER) * ACCLTODEG);
 		Serial.print("gyro: ");
