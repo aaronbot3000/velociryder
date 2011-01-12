@@ -27,18 +27,19 @@
 #define D_BALANCE 0.8 // units
 
 // PID control constants
-#define PGAIN 1.3
-#define IGAIN .02
-#define DGAIN .9
+#define PGAIN 2
+#define IGAIN .03
+#define DGAIN 0.0
 
-#define INTEG_BUFFER_SIZE 128
+#define INTEG_BUFFER_SIZE 32
 
 // Other control constants
-#define ACCL_MIX .05
+#define ACCL_MIX .038
 
 #define GYROTODEG 1.3046875  // degrees per unit
 #define ACCLTODEG .26614205575702629  // degrees per unit
-#define CYCLE_TIME .01
+#define CYCLE_TIME .02
+#define DELAY 20
 
 // Turning constants
 #define TURNPOT_MARGIN 7
@@ -154,10 +155,10 @@ void run_magic() {
 	integral += integ_buffer[ibuffer_ind];
 	ibuffer_ind = (ibuffer_ind + 1) % INTEG_BUFFER_SIZE;
 
-	level += IGAIN * integral;
+	level += constrain(IGAIN * integral, -15, 15);
 
 	// D
-	level += DGAIN * (angle - p_angle);
+	level += DGAIN * (p_angle - angle);
 
 	// Testing the Savitsky Golay filter for motor levels as well
 	for (filt_ind=0; filt_ind<6; filt_ind++) {
@@ -185,8 +186,8 @@ int16_t motorL;
 int16_t motorR;
 void set_motors()
 {
-	motorL = 1.3*level;// - steer;
-	motorR = 1.3*level;// + steer;
+	motorL = level;// - steer;
+	motorR = level;// + steer;
 
 	motorL = constrain(motorL, -40, 40);
 	motorR = constrain(motorR, -40, 40);
@@ -231,17 +232,18 @@ void loop()
 {
 	run_magic();
 	set_motors();
+	delay(DELAY);
 
 #ifdef OCCASIONALDEBUG
 	counter++;
-	counter%=128;
+	counter%=64;
 #endif
 }
 
 #ifdef OCCASIONALDEBUG
 void printStatusToSerial()
 {
-	if (counter == 127)
+	if (counter == 0)
 	{
 		Serial.println("=========");
 		Serial.print("lvl: ");
