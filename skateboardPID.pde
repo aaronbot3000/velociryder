@@ -27,10 +27,10 @@
 #define D_BALANCE 0.8 // units
 
 // PID control constants
-#define PGAIN 0.95
+#define PGAIN 0.96
 #define GGAIN 0.03
 #define IGAIN 0.0004
-#define DGAIN 0.025
+#define DGAIN 0.018
 
 // Other control constants
 #define INTEG_BUFFER_SIZE 128
@@ -41,7 +41,7 @@
 #define ACCLTODEG .26614205575702629  // degrees per unit
 #define CYCLE_TIME .01
 
-#define MGAIN 2
+#define MGAIN 2.5
 
 // Turning constants
 #define TURNPOT_MARGIN 10
