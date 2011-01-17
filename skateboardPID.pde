@@ -30,11 +30,11 @@
 #define PGAIN 0.95
 #define GGAIN 0.03
 #define IGAIN 0.0004
-#define DGAIN 0.005
+#define DGAIN 0.025
 
 // Other control constants
 #define INTEG_BUFFER_SIZE 128
-#define ACCL_MIX .005
+#define ACCL_MIX .01
 #define ACCL_NORM 10
 
 #define GYROTODEG 1.3046875  // degrees per unit
@@ -44,10 +44,10 @@
 #define MGAIN 2
 
 // Turning constants
-#define TURNPOT_MARGIN 7
+#define TURNPOT_MARGIN 10
 #define STEER_MARGIN 3
-#define STEER_CORRECT_POWER .15
-#define STEER_POWER .15
+#define STEER_CORRECT_POWER .0
+#define STEER_POWER .25
 #define MIN_STEER 90
 
 // Digital I/O defines
@@ -87,13 +87,16 @@ void setup() {
 
 	signal_go_time();
 
+	level = 0;
+
 	// Wait for user to level board
-	/*
 	while (true) {
+		run_magic();
 		if (abs(level) < 10)
 			break;
+		constrain(level, -40, 40);
+		Serial.println(level);
 	}
-	*/
 
 	// the turnpot's value at center is different when at rest and when stood on
 	// So take the reference point after the user is on the board
@@ -101,6 +104,7 @@ void setup() {
 
 	level = 0;
 	
+	// Turn off lights
 	now_going();
 }
 
@@ -127,7 +131,7 @@ void process_steering() {
 			steer -= TURNPOT_MARGIN;
 
 		// Scale according to speed
-		steer_req = steer * STEER_POWER * ((-abs(level) * (1-MIN_STEER)/100) + 1);
+		steer_req = steer * STEER_POWER;// * ((-abs(level) * (1-MIN_STEER)/100) + 1);
 	}
 }
 
@@ -158,7 +162,7 @@ void run_magic() {
 	level += constrain(IGAIN * integral, -100, 100);
 
 	// D
-	level += DGAIN * (level - p_level);
+	level += DGAIN * (p_level - level);
 
 	// Testing the Savitsky Golay filter for motor levels as well
 	for (filt_ind=0; filt_ind<6; filt_ind++) {
@@ -186,8 +190,8 @@ int16_t motorL;
 int16_t motorR;
 void set_motors()
 {
-	motorL = MGAIN * level;// - steer;
-	motorR = MGAIN * level;// + steer;
+	motorL = MGAIN * level + steer_req;// - steer;
+	motorR = MGAIN * level - steer_req;// + steer;
 
 	motorL = constrain(motorL, -40, 40);
 	motorR = constrain(motorR, -40, 40);
@@ -231,6 +235,7 @@ void heartbeat()
 void loop()
 {
 	run_magic();
+	process_steering();
 	set_motors();
 
 #ifdef OCCASIONALDEBUG
@@ -253,6 +258,10 @@ void printStatusToSerial()
 		Serial.println((read_accl() - ACCL_CENTER) * ACCLTODEG);
 		Serial.print("gyro: ");
 		Serial.println((read_ygyro()-ygyro_ref) * GYROTODEG);
+		Serial.print("steer_req: ");
+		Serial.println(steer_req);
+		Serial.print("steer: ");
+		Serial.println(steer);
 	}
 }
 #endif
