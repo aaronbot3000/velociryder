@@ -27,19 +27,19 @@
 #define D_BALANCE 0.8 // units
 
 // PID control constants
-#define PGAIN 2
-#define IGAIN .03
+#define PGAIN 0.5
+#define IGAIN .00
 #define DGAIN 0.0
 
 #define INTEG_BUFFER_SIZE 32
 
 // Other control constants
-#define ACCL_MIX .038
+#define ACCL_MIX .005
+#define MGAIN 2
 
 #define GYROTODEG 1.3046875  // degrees per unit
 #define ACCLTODEG .26614205575702629  // degrees per unit
-#define CYCLE_TIME .02
-#define DELAY 20
+#define CYCLE_TIME .01
 
 // Turning constants
 #define TURNPOT_MARGIN 7
@@ -62,6 +62,7 @@ float ygyro_ref;
 float zgyro_ref;
 float turnpot_ref;
 float level;
+float angle = 0;
 
 void setup() {
 	pinMode(HEARTBEAT, OUTPUT);
@@ -98,6 +99,7 @@ void setup() {
 	turnpot_ref = read_turnpot();
 
 	level = 0;
+	angle = 0;
 	
 	now_going();
 }
@@ -136,15 +138,21 @@ float integ_buffer[INTEG_BUFFER_SIZE];
 uint8_t ibuffer_ind = 0;
 float integral = 0;
 float p_angle = 0;
-float angle = 0;
 float ygyro;
 float accl;
+float time_since = 0;
+unsigned long time = 0;
 
 void run_magic() {
 	p_angle = angle;
-	ygyro = (read_ygyro() - ygyro_ref) * GYROTODEG;
 	accl = (read_accl() - ACCL_CENTER) * ACCLTODEG;
-	angle = (angle + ygyro * CYCLE_TIME) * (1 - ACCL_MIX) + accl * ACCL_MIX;
+
+	time_since = (((float)(millis() - time))/1000.0);
+	time = millis();
+
+	ygyro = 1.5 * (read_ygyro() - ygyro_ref) * GYROTODEG * time_since;
+
+	angle = ((angle + ygyro) * (1 - ACCL_MIX)) + (accl * ACCL_MIX);
 	
 	// P
 	level = PGAIN * angle;
@@ -158,7 +166,7 @@ void run_magic() {
 	level += constrain(IGAIN * integral, -15, 15);
 
 	// D
-	level += DGAIN * (p_angle - angle);
+	level += DGAIN * (angle - p_angle);
 
 	// Testing the Savitsky Golay filter for motor levels as well
 	for (filt_ind=0; filt_ind<6; filt_ind++) {
@@ -186,8 +194,8 @@ int16_t motorL;
 int16_t motorR;
 void set_motors()
 {
-	motorL = level;// - steer;
-	motorR = level;// + steer;
+	motorL = MGAIN * level;// - steer;
+	motorR = MGAIN * level;// + steer;
 
 	motorL = constrain(motorL, -40, 40);
 	motorR = constrain(motorR, -40, 40);
@@ -232,7 +240,6 @@ void loop()
 {
 	run_magic();
 	set_motors();
-	delay(DELAY);
 
 #ifdef OCCASIONALDEBUG
 	counter++;
@@ -250,10 +257,14 @@ void printStatusToSerial()
 		Serial.println(level);
 		Serial.print("ang: ");
 		Serial.println(angle);
-		Serial.print("accl: ");
-		Serial.println((read_accl() - ACCL_CENTER) * ACCLTODEG);
 		Serial.print("gyro: ");
 		Serial.println((read_ygyro()-ygyro_ref) * GYROTODEG);
+		Serial.print("yaccl: ");
+		Serial.println(accl);
+		Serial.print("ygyro: ");
+		Serial.println(ygyro, 8);
+		Serial.print("time: ");
+		Serial.println(time_since, 8);
 	}
 }
 #endif

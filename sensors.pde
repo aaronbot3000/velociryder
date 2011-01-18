@@ -94,7 +94,7 @@ float ygyro_sum;
 float read_ygyro() {
 	ygyro_sum = 0;
 	for (i=0; i<7; i++) {
-		ygyro_sum += analogRead(YGYRO4);
+		ygyro_sum += analogRead(YGYRO);
 	}
 	return ygyro_sum * DIV7;
 }
