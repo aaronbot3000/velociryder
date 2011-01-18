@@ -41,11 +41,13 @@
 #define ACCLTODEG .26614205575702629  // degrees per unit
 #define CYCLE_TIME .01
 
+#define MGAIN 2.5
+
 // Turning constants
-#define TURNPOT_MARGIN 7
+#define TURNPOT_MARGIN 10
 #define STEER_MARGIN 3
-#define STEER_CORRECT_POWER .15
-#define STEER_POWER .15
+#define STEER_CORRECT_POWER .0
+#define STEER_POWER .25
 #define MIN_STEER 90
 
 // Digital I/O defines
@@ -86,13 +88,16 @@ void setup() {
 
 	signal_go_time();
 
+	level = 0;
+
 	// Wait for user to level board
-	/*
 	while (true) {
+		run_magic();
 		if (abs(level) < 10)
 			break;
+		constrain(level, -40, 40);
+		Serial.println(level);
 	}
-	*/
 
 	// the turnpot's value at center is different when at rest and when stood on
 	// So take the reference point after the user is on the board
@@ -101,6 +106,7 @@ void setup() {
 	level = 0;
 	angle = 0;
 	
+	// Turn off lights
 	now_going();
 }
 
@@ -127,13 +133,12 @@ void process_steering() {
 			steer -= TURNPOT_MARGIN;
 
 		// Scale according to speed
-		steer_req = steer * STEER_POWER * ((-abs(level) * (1-MIN_STEER)/100) + 1);
+		steer_req = steer * STEER_POWER;// * ((-abs(level) * (1-MIN_STEER)/100) + 1);
 	}
 }
 
 uint8_t filt_ind;
 float filt_level[7];
-float old_level;
 float integ_buffer[INTEG_BUFFER_SIZE];
 uint8_t ibuffer_ind = 0;
 float integral = 0;
@@ -155,18 +160,19 @@ void run_magic() {
 	angle = ((angle + ygyro) * (1 - ACCL_MIX)) + (accl * ACCL_MIX);
 	
 	// P
-	level = PGAIN * angle;
+	level = PGAIN * (level * (1 - ACCL_MIX) + ACCL_NORM * accl * ACCL_MIX);
+	level += GGAIN * ygyro;
 
 	// I
 	integral -= integ_buffer[ibuffer_ind];
-	integ_buffer[ibuffer_ind] = angle;
+	integ_buffer[ibuffer_ind] = level;
 	integral += integ_buffer[ibuffer_ind];
 	ibuffer_ind = (ibuffer_ind + 1) % INTEG_BUFFER_SIZE;
 
 	level += constrain(IGAIN * integral, -15, 15);
 
 	// D
-	level += DGAIN * (angle - p_angle);
+	level += DGAIN * (p_level - level);
 
 	// Testing the Savitsky Golay filter for motor levels as well
 	for (filt_ind=0; filt_ind<6; filt_ind++) {
@@ -194,8 +200,8 @@ int16_t motorL;
 int16_t motorR;
 void set_motors()
 {
-	motorL = MGAIN * level;// - steer;
-	motorR = MGAIN * level;// + steer;
+	motorL = MGAIN * level + steer_req;// - steer;
+	motorR = MGAIN * level - steer_req;// + steer;
 
 	motorL = constrain(motorL, -40, 40);
 	motorR = constrain(motorR, -40, 40);
@@ -239,6 +245,7 @@ void heartbeat()
 void loop()
 {
 	run_magic();
+	process_steering();
 	set_motors();
 
 #ifdef OCCASIONALDEBUG
@@ -265,6 +272,10 @@ void printStatusToSerial()
 		Serial.println(ygyro, 8);
 		Serial.print("time: ");
 		Serial.println(time_since, 8);
+		Serial.print("steer_req: ");
+		Serial.println(steer_req);
+		Serial.print("steer: ");
+		Serial.println(steer);
 	}
 }
 #endif
