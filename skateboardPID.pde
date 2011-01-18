@@ -27,15 +27,15 @@
 #define D_BALANCE 0.8 // units
 
 // PID control constants
-#define PGAIN 0.5
-#define IGAIN .00
+#define PGAIN 4.5
+#define IGAIN 0.01
 #define DGAIN 0.0
 
-#define INTEG_BUFFER_SIZE 32
+#define INTEG_BUFFER_SIZE 128
 
 // Other control constants
 #define ACCL_MIX .005
-#define MGAIN 2
+#define MGAIN 1
 
 #define GYROTODEG 1.3046875  // degrees per unit
 #define ACCLTODEG .26614205575702629  // degrees per unit
