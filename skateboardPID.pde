@@ -169,7 +169,7 @@ void run_magic() {
 	integral += integ_buffer[ibuffer_ind];
 	ibuffer_ind = (ibuffer_ind + 1) % INTEG_BUFFER_SIZE;
 
-	level += constrain(IGAIN * integral, -15, 15);
+	level += constrain(IGAIN * integral, -50, 50);
 
 	// D
 	level += DGAIN * (p_level - level);
