@@ -19,17 +19,19 @@
 //- = tip backward
 
 // Accelerometer center point
-#define ACCL_CENTER 470   // units
+#define ACCL_CENTER 495   // units
 
 // Balance adjust
 #define MAXBALANCE 90  // units
 #define MINBALANCE -90 // units
 #define D_BALANCE 0.8 // units
 
+#define GYRO_REDUC 0.31
+
 // PID control constants
-#define PGAIN 6
+#define PGAIN 7
 #define IGAIN 0 //0.03
-#define DGAIN 0.4
+#define DGAIN 1.5
 
 #define INTEG_BUFFER_SIZE 128
 
@@ -46,9 +48,6 @@
 #define STEER_CORRECT_POWER .14
 #define STEER_POWER .25
 #define MIN_STEER 90
-
-// Digital I/O defines
-#define HEARTBEAT    13
 
 #ifdef OCCASIONALDEBUG
 #define BAUD 57600
@@ -138,7 +137,7 @@ void run_magic() {
 	time_since = (((float)(millis() - time))/1000.0);
 	time = millis();
 
-	ygyro = 1.5 * (read_ygyro() - ygyro_ref) * GYROTODEG * time_since;
+	ygyro = GYRO_REDUC * (read_ygyro() - ygyro_ref) * GYROTODEG * time_since;
 
 	angle = ((angle + ygyro) * (1 - ACCL_MIX)) + (accl * ACCL_MIX);
 	
@@ -208,35 +207,6 @@ void set_motors()
 #endif
 }
 
-uint8_t pulseCounterA = 0;
-uint8_t pulseCounterB = 1;
-uint8_t pulseCounterDir = -1;
-uint8_t cycleCount = 0;
-void heartbeat()
-{
-	// TODO: replace with a proper PWM blinky
-	if (pulseCounterA % 50 == 0)
-	{
-		pulseCounterB += pulseCounterDir;
-		if (pulseCounterB <= 1)
-			pulseCounterDir = 1;
-		if (pulseCounterB >= 5)
-			pulseCounterDir = -1;
-		pulseCounterA = 0;
-	}
-
-	if (cycleCount % pulseCounterB == 0)
-		digitalWrite(HEARTBEAT, HIGH);
-	else
-		digitalWrite(HEARTBEAT, LOW);
-
-	cycleCount++;
-	if (cycleCount == 100)
-		cycleCount = 0;
-	pulseCounterA++;
-}
-
-
 void loop()
 {
 	run_magic();
@@ -271,6 +241,8 @@ void printStatusToSerial()
 		Serial.println(steer_req);
 		Serial.print("steer_req: ");
 		Serial.println(steer_req);
+		Serial.print("wait level: ");
+		Serial.println(wait_for_level);
 	}
 }
 #endif

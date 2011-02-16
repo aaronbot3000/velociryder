@@ -42,9 +42,7 @@
 #define TURNPOT 0
 
 // input defines
-#define OHSHITSWITCH 12
-#define BALANCEUP    11
-#define BALANCEDOWN  10
+#define OHSHITSWITCH 13
 
 uint8_t i;
 
@@ -71,14 +69,6 @@ float read_accl() {
 				 (-2*accl_savgolay_filt[6]))/21.0; 
 
 	return accl_filt;
-}
-
-uint8_t read_bal_switch() {
-	if (digitalRead(BALANCEUP))
-		return 1;
-	else if (digitalRead(BALANCEDOWN))
-		return -1;
-	return 0;
 }
 
 bool read_shit_switch() {
