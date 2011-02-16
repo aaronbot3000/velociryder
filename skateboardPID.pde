@@ -31,7 +31,7 @@
 // PID control constants
 #define PGAIN 7
 #define IGAIN 0 //0.03
-#define DGAIN 1.5
+#define DGAIN 1.9
 
 #define INTEG_BUFFER_SIZE 128
 
@@ -43,10 +43,10 @@
 #define ACCLTODEG .26614205575702629  // degrees per unit
 
 // Turning constants
-#define TURNPOT_MARGIN 10
-#define STEER_MARGIN 10
-#define STEER_CORRECT_POWER .14
-#define STEER_POWER .25
+#define TURNPOT_MARGIN 18
+#define STEER_MARGIN 18
+#define STEER_CORRECT_POWER .10
+#define STEER_POWER .40
 #define MIN_STEER 90
 
 #ifdef OCCASIONALDEBUG
@@ -55,6 +55,7 @@ uint8_t counter;
 #endif
 
 float steer_req;
+float steer_correct;
 float balance_trim;
 float ygyro_ref;
 float zgyro_ref;
@@ -65,7 +66,6 @@ float angle = 0;
 bool wait_for_level = false;
 
 void setup() {
-	pinMode(HEARTBEAT, OUTPUT);
 #ifdef OCCASIONALDEBUG
 	Serial.begin(BAUD);
 #endif
@@ -104,7 +104,8 @@ void process_steering() {
 	// If going straight
 	if (abs(steer) <= TURNPOT_MARGIN) {
 		if (abs(zgyro) > STEER_MARGIN)
-			steer_req = STEER_CORRECT_POWER * zgyro;
+			steer_correct = STEER_CORRECT_POWER * zgyro;
+		steer_req = 0;
 	}
 	// We are turning
 	else {
@@ -115,6 +116,7 @@ void process_steering() {
 
 		// Scale according to speed
 		steer_req = steer * STEER_POWER ;//* ((-abs(level) * (1-MIN_STEER)/100) + 1);
+		steer_correct = 0;
 	}
 }
 
@@ -143,14 +145,6 @@ void run_magic() {
 	
 	// P
 	level = PGAIN * angle;
-
-	// I
-	integral -= integ_buffer[ibuffer_ind];
-	integ_buffer[ibuffer_ind] = angle;
-	integral += integ_buffer[ibuffer_ind];
-	ibuffer_ind = (ibuffer_ind + 1) % INTEG_BUFFER_SIZE;
-
-	level += constrain(IGAIN * integral, -50, 50);
 
 	// D
 	level += DGAIN * (angle - p_angle);
@@ -181,8 +175,12 @@ int16_t motorL;
 int16_t motorR;
 void set_motors()
 {
-	motorL = MGAIN * level + steer_req;
-	motorR = MGAIN * level - steer_req;
+	if (level < 0) {
+		steer_req *= -1;
+	}
+	motorL = MGAIN * level + steer_req + steer_correct;
+	motorR = MGAIN * level - steer_req - steer_correct;
+
 
 	motorL = constrain(motorL, -100, 100);
 	motorR = constrain(motorR, -100, 100);
