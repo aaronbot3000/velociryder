@@ -35,11 +35,11 @@
 #define ACCLTODEG .26614205575702629  // degrees per unit
 
 // sensor defines
-#define YGYRO 0
-#define YGYRO4 1
-#define ZGYRO 2
-#define YACCL 3
-#define TURNPOT 4
+#define YGYRO 3
+#define YGYRO4 4
+#define ZGYRO 5
+#define YACCL 1
+#define TURNPOT 0
 
 // input defines
 #define OHSHITSWITCH 12
@@ -50,11 +50,6 @@ uint8_t i;
 
 void init_sensors() {
 	analogReference(EXTERNAL);
-
-	// set digital inputs
-	pinMode(OHSHITSWITCH, INPUT);
-	pinMode(BALANCEUP, INPUT);
-	pinMode(BALANCEDOWN, INPUT);
 }
 
 float accl_filt;
@@ -94,7 +89,7 @@ float ygyro_sum;
 float read_ygyro() {
 	ygyro_sum = 0;
 	for (i=0; i<7; i++) {
-		ygyro_sum += analogRead(YGYRO);
+		ygyro_sum += analogRead(YGYRO4);
 	}
 	return ygyro_sum * DIV7;
 }

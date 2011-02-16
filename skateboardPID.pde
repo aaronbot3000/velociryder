@@ -27,24 +27,23 @@
 #define D_BALANCE 0.8 // units
 
 // PID control constants
-#define PGAIN 7
-#define IGAIN 0.02
-#define DGAIN 0.0
+#define PGAIN 6
+#define IGAIN 0 //0.03
+#define DGAIN 0.4
 
 #define INTEG_BUFFER_SIZE 128
 
 // Other control constants
 #define ACCL_MIX .005
-#define MGAIN 1
+#define MGAIN 1.6
 
 #define GYROTODEG 1.3046875  // degrees per unit
 #define ACCLTODEG .26614205575702629  // degrees per unit
-#define CYCLE_TIME .01
 
 // Turning constants
 #define TURNPOT_MARGIN 10
-#define STEER_MARGIN 3
-#define STEER_CORRECT_POWER .0
+#define STEER_MARGIN 10
+#define STEER_CORRECT_POWER .14
 #define STEER_POWER .25
 #define MIN_STEER 90
 
@@ -63,6 +62,8 @@ float zgyro_ref;
 float turnpot_ref;
 float level;
 float angle = 0;
+
+bool wait_for_level = false;
 
 void setup() {
 	pinMode(HEARTBEAT, OUTPUT);
@@ -84,14 +85,8 @@ void setup() {
 	ygyro_ref = read_ygyro();
 	zgyro_ref = read_zgyro();
 
-	signal_go_time();
-
 	// Wait for user to level board
-	while (true) {
-		if (abs(level) < 10)
-			break;
-		run_magic();
-	}
+	wait_for_level = true;
 
 	// the turnpot's value at center is different when at rest and when stood on
 	// So take the reference point after the user is on the board
@@ -99,12 +94,6 @@ void setup() {
 
 	level = 0;
 	angle = 0;
-	
-	now_going();
-}
-
-void adj_balance() {
-	balance_trim = constrain(balance_trim + (D_BALANCE * read_bal_switch()), MINBALANCE, MAXBALANCE);
 }
 
 float zgyro, steer;
@@ -199,7 +188,20 @@ void set_motors()
 	motorL = constrain(motorL, -100, 100);
 	motorR = constrain(motorR, -100, 100);
 
-	send_motor_command(motorL, motorR);
+	if (!read_shit_switch()) {
+		kill_motors();
+		reset_integ_buffer();
+		wait_for_level = true;
+	}
+
+	else if (wait_for_level) {
+		if (abs(level) < 10)
+			wait_for_level = false;
+	}
+
+	else {
+		send_motor_command(motorL, motorR);
+	}
 
 #ifdef OCCASIONALDEBUG
 	printStatusToSerial();
