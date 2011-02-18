@@ -19,19 +19,19 @@
 //- = tip backward
 
 // Accelerometer center point
-#define ACCL_CENTER 495   // units
+#define ACCL_CENTER 500   // units
 
 // Balance adjust
 #define MAXBALANCE 90  // units
 #define MINBALANCE -90 // units
 #define D_BALANCE 0.8 // units
 
-#define GYRO_REDUC 0.31
+#define GYRO_REDUC 0.33
 
 // PID control constants
-#define PGAIN 7
+#define PGAIN 7.8
 #define IGAIN 0 //0.03
-#define DGAIN 1.9
+#define DGAIN 2.1
 
 #define INTEG_BUFFER_SIZE 128
 
@@ -43,10 +43,11 @@
 #define ACCLTODEG .26614205575702629  // degrees per unit
 
 // Turning constants
-#define TURNPOT_MARGIN 18
-#define STEER_MARGIN 18
-#define STEER_CORRECT_POWER .10
-#define STEER_POWER .40
+#define TURNPOT_MARGIN 28
+#define STEER_OFFSET 0
+#define STEER_GYRO_MARGIN 8
+#define STEER_CORRECT_POWER .30
+#define STEER_POWER .20
 #define MIN_STEER 90
 
 #ifdef OCCASIONALDEBUG
@@ -55,7 +56,6 @@ uint8_t counter;
 #endif
 
 float steer_req;
-float steer_correct;
 float balance_trim;
 float ygyro_ref;
 float zgyro_ref;
@@ -98,25 +98,25 @@ void setup() {
 float zgyro, steer;
 void process_steering() {
 	// steering here
-	zgyro = -(read_zgyro() - zgyro_ref);
-	steer = read_turnpot() - turnpot_ref;
+	zgyro = (read_zgyro() - zgyro_ref);
+	steer = -(read_turnpot() - turnpot_ref);
 
 	// If going straight
 	if (abs(steer) <= TURNPOT_MARGIN) {
-		if (abs(zgyro) > STEER_MARGIN)
-			steer_correct = STEER_CORRECT_POWER * zgyro;
-		steer_req = 0;
+		if (abs(zgyro) > STEER_GYRO_MARGIN)
+			steer_req = STEER_CORRECT_POWER * zgyro;
+		else
+			steer_req = 0;
 	}
 	// We are turning
 	else {
 		if (steer < turnpot_ref)
-			steer += TURNPOT_MARGIN;
+			steer += STEER_OFFSET;
 		else
-			steer -= TURNPOT_MARGIN;
+			steer -= STEER_OFFSET;
 
 		// Scale according to speed
 		steer_req = steer * STEER_POWER ;//* ((-abs(level) * (1-MIN_STEER)/100) + 1);
-		steer_correct = 0;
 	}
 }
 
@@ -175,11 +175,8 @@ int16_t motorL;
 int16_t motorR;
 void set_motors()
 {
-	if (level < 0) {
-		steer_req *= -1;
-	}
-	motorL = MGAIN * level + steer_req + steer_correct;
-	motorR = MGAIN * level - steer_req - steer_correct;
+	motorL = MGAIN * level + steer_req;
+	motorR = MGAIN * level - steer_req;
 
 
 	motorL = constrain(motorL, -100, 100);
@@ -231,16 +228,22 @@ void printStatusToSerial()
 		Serial.println((read_ygyro()-ygyro_ref) * GYROTODEG);
 		Serial.print("yaccl: ");
 		Serial.println(accl);
+		Serial.print("yaccl_raw: ");
+		Serial.println(read_accl());
 		Serial.print("ygyro: ");
 		Serial.println(ygyro, 8);
 		Serial.print("time: ");
 		Serial.println(time_since, 8);
 		Serial.print("steer: ");
-		Serial.println(steer_req);
+		Serial.println(steer);
 		Serial.print("steer_req: ");
 		Serial.println(steer_req);
 		Serial.print("wait level: ");
 		Serial.println(wait_for_level);
+		Serial.print("zgyro: ");
+		Serial.println(zgyro);
+		Serial.print("tpot: ");
+		Serial.println(read_turnpot());
 	}
 }
 #endif
