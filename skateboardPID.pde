@@ -39,8 +39,10 @@
 #define ACCL_MIX .005
 #define MGAIN 1.6
 
-#define GYROTODEG 1.3046875  // degrees per unit
-#define ACCLTODEG .26614205575702629  // degrees per unit
+//IMU constants
+#define GYROTODEG4 3.0658682  // degrees per unit
+#define GYROTODEG  0.7664671  // degrees per unit
+#define ACCLTODEG  0.2661421  // degrees per unit
 
 // Turning constants
 #define TURNPOT_MARGIN 28
@@ -55,13 +57,17 @@
 static uint8_t counter;
 #endif
 
-static float steer_req;
-static float balance_trim;
-static float ygyro_ref;
-static float zgyro_ref;
+extern float angle;
+extern float ygyro_bias;
+extern float rate;
+
+extern float ygyro_reading;
+extern float zgyro_reading;
+extern float accl_reading;
+extern float turnpot_reading;
+
+static float zgyro_bias;
 static float turnpot_ref;
-static float level;
-static float angle = 0;
 
 static bool wait_for_level = false;
 
@@ -81,25 +87,29 @@ void setup() {
 	// 5 seconds may seem long but it doesn't work too well unless its 5 seconds
 	//delay (5000);
 
-	ygyro_ref = read_ygyro();
-	zgyro_ref = read_zgyro();
+	read_zgyro();
+	zgyro_bias = zgyro_reading;
 
 	// Wait for user to level board
 	wait_for_level = true;
 
 	// the turnpot's value at center is different when at rest and when stood on
 	// So take the reference point after the user is on the board
-	turnpot_ref = read_turnpot();
+	read_turnpot();
+	turnpot_ref = turnpot_reading
 
 	level = 0;
 	angle = 0;
 }
 
-static float zgyro, steer;
+static float steer_req;
+static float steer;
 void process_steering() {
 	// steering here
-	zgyro = (read_zgyro() - zgyro_ref);
-	steer = -(read_turnpot() - turnpot_ref);
+	read_zyro();
+	read_turnpot();
+	zgyro = (zgyro_reading - zgyro_bias);
+	steer = -(turnpot_reading - turnpot_ref);
 
 	// If going straight
 	if (abs(steer) <= TURNPOT_MARGIN) {
@@ -122,10 +132,8 @@ void process_steering() {
 
 static uint8_t filt_ind;
 static float filt_level[7];
-static float old_level;
-static float p_angle = 0;
-static float ygyro;
-static float accl;
+
+static float level;
 static float time_since = 0;
 unsigned long time = 0;
 

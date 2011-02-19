@@ -14,20 +14,6 @@
 
 #define DIV7      0.14285714285714 // answer to 1/7
 
-//IMU constants
-//ARef at 3.34 V
-// 100 deg per second
-// 2.5 mV per (deg per second)
-#define GYROTODEG 1.3046875  // degrees per unit
-
-// 400 deg per second
-// 10 mV per (deg per second)
-#define GYROTODEG4 3.26171875  // degrees per unit
-
-// .971V at 45 degrees
-// 2.074 at 135 degrees
-#define ACCLTODEG .26614205575702629  // degrees per unit
-
 // sensor defines
 #define YGYRO 3
 #define YGYRO4 4
@@ -38,15 +24,19 @@
 // input defines
 #define OHSHITSWITCH 13
 
+float accl_reading;
+float ygyro_reading;
+float zgyro_reading;
+float turnpot_reading;
+
 static uint8_t i;
 
 void init_sensors() {
 	analogReference(EXTERNAL);
 }
 
-static float accl_filt;
 static float accl_savgolay_filt[7];
-float read_accl() {
+void update_accl() {
 	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
 	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
 	for (i=0; i<6; i++)
@@ -54,44 +44,39 @@ float read_accl() {
 	accl_savgolay_filt[6] = analogRead(YACCL);
 
 	// Magic numbers!!!
-	accl_filt = ((-2*accl_savgolay_filt[0]) + 
+	accl_reading = ((-2*accl_savgolay_filt[0]) + 
 				 ( 3*accl_savgolay_filt[1]) + 
 				 ( 6*accl_savgolay_filt[2]) + 
 				 ( 7*accl_savgolay_filt[3]) + 
 				 ( 6*accl_savgolay_filt[4]) + 
 				 ( 3*accl_savgolay_filt[5]) + 
 				 (-2*accl_savgolay_filt[6]))/21.0; 
-
-	return accl_filt;
 }
 
 bool read_shit_switch() {
 	return digitalRead(OHSHITSWITCH);
 }
 
-static float ygyro_sum;
-float read_ygyro() {
-	ygyro_sum = 0;
+void read_ygyro() {
+	ygyro_reading = 0;
 	for (i=0; i<7; i++) {
-		ygyro_sum += analogRead(YGYRO4);
+		ygyro_reading += analogRead(YGYRO4);
 	}
-	return ygyro_sum * DIV7;
+	return ygyro_reading * DIV7;
 }
 
-static float zgyro_sum;
-float read_zgyro() {
-	zgyro_sum = 0;
+void read_zgyro() {
+	zgyro_reading = 0;
 	for (i=0; i<7; i++) {
-		zgyro_sum += analogRead(ZGYRO);
+		zgyro_reading += analogRead(ZGYRO);
 	}
-	return zgyro_sum * DIV7;
+	return zgyro_reading * DIV7;
 }
 
-static float turnpot_sum;
-float read_turnpot() {
-	turnpot_sum = 0;
+void read_turnpot() {
+	turnpot_reading = 0;
 	for (i=0; i<7; i++) {
-		turnpot_sum += analogRead(TURNPOT);
+		turnpot_reading += analogRead(TURNPOT);
 	}
-	return turnpot_sum * DIV7;
+	return turnpot_reading * DIV7;
 }
