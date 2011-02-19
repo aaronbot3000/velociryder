@@ -22,7 +22,7 @@ void init_motors() {
 	motors.print(STOP, BYTE);
 }
 
-float softStartMult = 1;
+static float softStartMult = 1;
 void send_motor_command(int16_t motorL, int16_t motorR) {
 	// Slowly come back from a killswitch release
 	if (softStartMult < 1)
@@ -40,7 +40,7 @@ void send_motor_command(int16_t motorL, int16_t motorR) {
 void kill_motors() {
 	motorL = 0;
 	motorR = 0;
-	softStartMult = .2;
+	softStartMult = .5;
 	motors.print(STOP, BYTE);
 }
 

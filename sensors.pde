@@ -1,9 +1,3 @@
-// TODO: Add balance point shift compensation for acceleration and 
-// deceleration. Check by seeing change in level
-
-// Changeables
-//#define OCCASIONALDEBUG
-
 /*
    Front of board
    -100 power
@@ -44,14 +38,14 @@
 // input defines
 #define OHSHITSWITCH 13
 
-uint8_t i;
+static uint8_t i;
 
 void init_sensors() {
 	analogReference(EXTERNAL);
 }
 
-float accl_filt;
-float accl_savgolay_filt[7];
+static float accl_filt;
+static float accl_savgolay_filt[7];
 float read_accl() {
 	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
 	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
@@ -75,7 +69,7 @@ bool read_shit_switch() {
 	return digitalRead(OHSHITSWITCH);
 }
 
-float ygyro_sum;
+static float ygyro_sum;
 float read_ygyro() {
 	ygyro_sum = 0;
 	for (i=0; i<7; i++) {
@@ -84,7 +78,7 @@ float read_ygyro() {
 	return ygyro_sum * DIV7;
 }
 
-float zgyro_sum;
+static float zgyro_sum;
 float read_zgyro() {
 	zgyro_sum = 0;
 	for (i=0; i<7; i++) {
@@ -93,7 +87,7 @@ float read_zgyro() {
 	return zgyro_sum * DIV7;
 }
 
-float turnpot_sum;
+static float turnpot_sum;
 float read_turnpot() {
 	turnpot_sum = 0;
 	for (i=0; i<7; i++) {

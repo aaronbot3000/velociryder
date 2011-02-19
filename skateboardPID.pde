@@ -52,18 +52,18 @@
 
 #ifdef OCCASIONALDEBUG
 #define BAUD 57600
-uint8_t counter;
+static uint8_t counter;
 #endif
 
-float steer_req;
-float balance_trim;
-float ygyro_ref;
-float zgyro_ref;
-float turnpot_ref;
-float level;
-float angle = 0;
+static float steer_req;
+static float balance_trim;
+static float ygyro_ref;
+static float zgyro_ref;
+static float turnpot_ref;
+static float level;
+static float angle = 0;
 
-bool wait_for_level = false;
+static bool wait_for_level = false;
 
 void setup() {
 #ifdef OCCASIONALDEBUG
@@ -95,7 +95,7 @@ void setup() {
 	angle = 0;
 }
 
-float zgyro, steer;
+static float zgyro, steer;
 void process_steering() {
 	// steering here
 	zgyro = (read_zgyro() - zgyro_ref);
@@ -120,16 +120,13 @@ void process_steering() {
 	}
 }
 
-uint8_t filt_ind;
-float filt_level[7];
-float old_level;
-float integ_buffer[INTEG_BUFFER_SIZE];
-uint8_t ibuffer_ind = 0;
-float integral = 0;
-float p_angle = 0;
-float ygyro;
-float accl;
-float time_since = 0;
+static uint8_t filt_ind;
+static float filt_level[7];
+static float old_level;
+static float p_angle = 0;
+static float ygyro;
+static float accl;
+static float time_since = 0;
 unsigned long time = 0;
 
 void run_magic() {
@@ -165,14 +162,8 @@ void run_magic() {
 			 (-2*filt_level[6]))/21.0; 
 }
 
-void reset_integ_buffer() {
-	for (filt_ind = 0; filt_ind<INTEG_BUFFER_SIZE; filt_ind++)
-		integ_buffer[filt_ind] = 0;
-	integral = 0;
-}
-
-int16_t motorL;
-int16_t motorR;
+static int16_t motorL;
+static int16_t motorR;
 void set_motors()
 {
 	motorL = MGAIN * level + steer_req;
@@ -184,7 +175,6 @@ void set_motors()
 
 	if (!read_shit_switch()) {
 		kill_motors();
-		reset_integ_buffer();
 		wait_for_level = true;
 	}
 
