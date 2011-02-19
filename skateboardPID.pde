@@ -59,11 +59,13 @@ static uint8_t counter;
 
 extern float angle;
 extern float ygyro_bias;
-extern float rate;
 
 extern float ygyro_reading;
 extern float zgyro_reading;
-extern float accl_reading;
+
+extern float yaccl_reading;
+extern float zaccl_reading;
+
 extern float turnpot_reading;
 
 static float zgyro_bias;
@@ -137,14 +139,16 @@ void run_magic() {
 	static uint8_t filt_ind;
 	static float filt_level[7];
 	static unsigned long time = 0;
+	static float p_angle;
 
-	float time_since = 0;
+	const float time_since = (((float)(millis() - time))/1000.0);
+	
+	p_angle = angle;
 	/*
 	p_angle = angle;
 	accl = (read_accl() - ACCL_CENTER) * ACCLTODEG;
 	*/
 
-	time_since = (((float)(millis() - time))/1000.0);
 	time = millis();
 
 	/*
@@ -157,7 +161,7 @@ void run_magic() {
 	level = PGAIN * angle;
 
 	// D
-	level += DGAIN * (rate - ygyro_bias);
+	level += DGAIN * (angle - p_angle);
 
 	// Testing the Savitsky Golay filter for motor levels as well
 	for (filt_ind=0; filt_ind<6; filt_ind++) {
@@ -228,10 +232,10 @@ void printStatusToSerial()
 		Serial.println(level);
 		Serial.print("ang: ");
 		Serial.println(angle);
-		Serial.print("gyro: ");
-		Serial.println((rate - ygyro_bias) * GYROTODEG);
 		Serial.print("yaccl_raw: ");
-		Serial.println(accl_reading);
+		Serial.println(yaccl_reading);
+		Serial.print("yaccl_raw: ");
+		Serial.println(zaccl_reading);
 		Serial.print("ygyro_raw: ");
 		Serial.println(ygyro_reading, 8);
 		Serial.print("steer_req: ");
