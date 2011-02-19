@@ -68,6 +68,9 @@ extern float turnpot_reading;
 
 static float zgyro_bias;
 static float turnpot_ref;
+static float steer_req;
+
+static float level;
 
 static bool wait_for_level = false;
 
@@ -96,25 +99,25 @@ void setup() {
 	// the turnpot's value at center is different when at rest and when stood on
 	// So take the reference point after the user is on the board
 	read_turnpot();
-	turnpot_ref = turnpot_reading
+	turnpot_ref = turnpot_reading;
 
 	level = 0;
 	angle = 0;
 }
 
-static float steer_req;
-static float steer;
 void process_steering() {
+	float steer;
+	float rot_rate;
 	// steering here
-	read_zyro();
+	read_zgyro();
 	read_turnpot();
-	zgyro = (zgyro_reading - zgyro_bias);
+	rot_rate = (zgyro_reading - zgyro_bias);
 	steer = -(turnpot_reading - turnpot_ref);
 
 	// If going straight
 	if (abs(steer) <= TURNPOT_MARGIN) {
-		if (abs(zgyro) > STEER_GYRO_MARGIN)
-			steer_req = STEER_CORRECT_POWER * zgyro;
+		if (abs(rot_rate) > STEER_GYRO_MARGIN)
+			steer_req = STEER_CORRECT_POWER * rot_rate;
 		else
 			steer_req = 0;
 	}
@@ -130,14 +133,14 @@ void process_steering() {
 	}
 }
 
-static uint8_t filt_ind;
-static float filt_level[7];
 
-static float level;
-static float time_since = 0;
-unsigned long time = 0;
 
 void run_magic() {
+	static uint8_t filt_ind;
+	static float filt_level[7];
+	static unsigned long time = 0;
+
+	float time_since = 0;
 	p_angle = angle;
 	accl = (read_accl() - ACCL_CENTER) * ACCLTODEG;
 
@@ -170,13 +173,12 @@ void run_magic() {
 			 (-2*filt_level[6]))/21.0; 
 }
 
-static int16_t motorL;
-static int16_t motorR;
 void set_motors()
 {
+	int16_t motorL;
+	int16_t motorR;
 	motorL = MGAIN * level + steer_req;
 	motorR = MGAIN * level - steer_req;
-
 
 	motorL = constrain(motorL, -100, 100);
 	motorR = constrain(motorR, -100, 100);
