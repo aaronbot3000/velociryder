@@ -133,29 +133,31 @@ void process_steering() {
 	}
 }
 
-
-
 void run_magic() {
 	static uint8_t filt_ind;
 	static float filt_level[7];
 	static unsigned long time = 0;
 
 	float time_since = 0;
+	/*
 	p_angle = angle;
 	accl = (read_accl() - ACCL_CENTER) * ACCLTODEG;
+	*/
 
 	time_since = (((float)(millis() - time))/1000.0);
 	time = millis();
 
+	/*
 	ygyro = GYRO_REDUC * (read_ygyro() - ygyro_ref) * GYROTODEG * time_since;
 
 	angle = ((angle + ygyro) * (1 - ACCL_MIX)) + (accl * ACCL_MIX);
+	*/
 	
 	// P
 	level = PGAIN * angle;
 
 	// D
-	level += DGAIN * (angle - p_angle);
+	level += DGAIN * (rate - ygyro_bias);
 
 	// Testing the Savitsky Golay filter for motor levels as well
 	for (filt_ind=0; filt_ind<6; filt_ind++) {
@@ -191,6 +193,8 @@ void set_motors()
 	else if (wait_for_level) {
 		if (abs(level) < 10)
 			wait_for_level = false;
+		else
+			kill_motors();
 	}
 
 	else {
@@ -225,25 +229,19 @@ void printStatusToSerial()
 		Serial.print("ang: ");
 		Serial.println(angle);
 		Serial.print("gyro: ");
-		Serial.println((read_ygyro()-ygyro_ref) * GYROTODEG);
-		Serial.print("yaccl: ");
-		Serial.println(accl);
+		Serial.println((rate - ygyro_bias) * GYROTODEG);
 		Serial.print("yaccl_raw: ");
-		Serial.println(read_accl());
-		Serial.print("ygyro: ");
-		Serial.println(ygyro, 8);
-		Serial.print("time: ");
-		Serial.println(time_since, 8);
-		Serial.print("steer: ");
-		Serial.println(steer);
+		Serial.println(accl_reading);
+		Serial.print("ygyro_raw: ");
+		Serial.println(ygyro_reading, 8);
 		Serial.print("steer_req: ");
 		Serial.println(steer_req);
 		Serial.print("wait level: ");
 		Serial.println(wait_for_level);
 		Serial.print("zgyro: ");
-		Serial.println(zgyro);
+		Serial.println(zgyro_reading);
 		Serial.print("tpot: ");
-		Serial.println(read_turnpot());
+		Serial.println(turnpot_reading);
 	}
 }
 #endif

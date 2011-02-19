@@ -35,8 +35,8 @@ void init_sensors() {
 	analogReference(EXTERNAL);
 }
 
-static float accl_savgolay_filt[7];
 void update_accl() {
+	static float accl_savgolay_filt[7];
 	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
 	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
 	for (i=0; i<6; i++)
@@ -62,7 +62,7 @@ void read_ygyro() {
 	for (i=0; i<7; i++) {
 		ygyro_reading += analogRead(YGYRO4);
 	}
-	return ygyro_reading * DIV7;
+	ygyro_reading *= DIV7;
 }
 
 void read_zgyro() {
@@ -70,7 +70,7 @@ void read_zgyro() {
 	for (i=0; i<7; i++) {
 		zgyro_reading += analogRead(ZGYRO);
 	}
-	return zgyro_reading * DIV7;
+	zgyro_reading *= DIV7;
 }
 
 void read_turnpot() {
@@ -78,5 +78,5 @@ void read_turnpot() {
 	for (i=0; i<7; i++) {
 		turnpot_reading += analogRead(TURNPOT);
 	}
-	return turnpot_reading * DIV7;
+	turnpot_reading *= DIV7;
 }
