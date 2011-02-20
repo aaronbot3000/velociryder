@@ -1,7 +1,4 @@
-#include <SoftwareSerial.h>
-
 #define OCCASIONALDEBUG
-
 /*
    Front of board
    +100 power
@@ -18,31 +15,17 @@
 //+ = tip forward
 //- = tip backward
 
+#define RAD2DEG 57.29577951
 // Accelerometer center point
 #define ACCL_CENTER 500   // units
 
-// Balance adjust
-#define MAXBALANCE 90  // units
-#define MINBALANCE -90 // units
-#define D_BALANCE 0.8 // units
-
-#define GYRO_REDUC 0.33
-
 // PID control constants
-#define PGAIN 7.8
-#define IGAIN 0 //0.03
-#define DGAIN 2.1
-
-#define INTEG_BUFFER_SIZE 128
+// Can change by around 5 at a time
+#define PGAIN 446.907
+#define DGAIN 120.321
 
 // Other control constants
-#define ACCL_MIX .005
 #define MGAIN 1.6
-
-//IMU constants
-#define GYROTODEG4 3.0658682  // degrees per unit
-#define GYROTODEG  0.7664671  // degrees per unit
-#define ACCLTODEG  0.2661421  // degrees per unit
 
 // Turning constants
 #define TURNPOT_MARGIN 28
@@ -52,10 +35,9 @@
 #define STEER_POWER .20
 #define MIN_STEER 90
 
-#ifdef OCCASIONALDEBUG
 #define BAUD 57600
+
 static uint8_t counter;
-#endif
 
 extern float angle;
 extern float ygyro_bias;
@@ -77,9 +59,7 @@ static float level;
 static bool wait_for_level = false;
 
 void setup() {
-#ifdef OCCASIONALDEBUG
 	Serial.begin(BAUD);
-#endif
 
 	init_sensors();
 	init_motors();
@@ -141,21 +121,21 @@ void run_magic() {
 	static unsigned long time = 0;
 	static float p_angle;
 
-	const float time_since = (((float)(millis() - time))/1000.0);
+	float time_since;
 	
 	p_angle = angle;
-	/*
-	p_angle = angle;
-	accl = (read_accl() - ACCL_CENTER) * ACCLTODEG;
-	*/
 
+	read_ygyro();
+	read_yaccl();
+	read_zaccl();
+
+	time_since = (((float)(millis() - time))/1000.0);
 	time = millis();
 
-	/*
-	ygyro = GYRO_REDUC * (read_ygyro() - ygyro_ref) * GYROTODEG * time_since;
-
-	angle = ((angle + ygyro) * (1 - ACCL_MIX)) + (accl * ACCL_MIX);
-	*/
+	time_interval_update(time_since);
+	// TODO: if the ygyro_reading is too far deflected, use YGYRO instead of YGYRO4
+	state_update(ygyro_reading);
+	kalman_update(yaccl_reading - ACCL_CENTER, zaccl_reading - ACCL_CENTER);
 	
 	// P
 	level = PGAIN * angle;
@@ -231,13 +211,13 @@ void printStatusToSerial()
 		Serial.print("lvl: ");
 		Serial.println(level);
 		Serial.print("ang: ");
-		Serial.println(angle);
+		Serial.println(angle * RAD2DEG);
 		Serial.print("yaccl_raw: ");
 		Serial.println(yaccl_reading);
-		Serial.print("yaccl_raw: ");
+		Serial.print("zaccl_raw: ");
 		Serial.println(zaccl_reading);
 		Serial.print("ygyro_raw: ");
-		Serial.println(ygyro_reading, 8);
+		Serial.println(ygyro_reading - ygyro_bias, 8);
 		Serial.print("steer_req: ");
 		Serial.println(steer_req);
 		Serial.print("wait level: ");

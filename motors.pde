@@ -1,3 +1,5 @@
+#include <SoftwareSerial.h>
+
 // motor Controller defines
 #define MOTOR_TX_PIN 11
 #define MOTOR_RX_PIN 6
@@ -25,11 +27,12 @@ void init_motors() {
 
 void send_motor_command(int16_t motorL, int16_t motorR) {
 	// Slowly come back from a killswitch release
-	if (softStartMult < 1)
+	if (softStartMult < 1) {
 		softStartMult += 0.01;
 
-	motorL *= softStartMult;
-	motorR *= softStartMult;
+		motorL *= softStartMult;
+		motorR *= softStartMult;
+	}
 	motorL = map(motorL, 100, -100, MOTOR1_MAX_BACK, MOTOR1_MAX_FRONT);
 	motorR = map(motorR, 100, -100, MOTOR2_MAX_BACK, MOTOR2_MAX_FRONT);
 

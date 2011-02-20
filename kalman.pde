@@ -1,4 +1,4 @@
-/* -*- indent-tabs-mode:T; c-basic-offset:8; tab-width:8; -*- vi: set ts=8:
+/*
  * $Id: tilt.c,v 1.1 2003/07/09 18:23:29 john Exp $
  *
  * 1 dimensional tilt sensor using a dual axis accelerometer
@@ -59,7 +59,7 @@
  */
 #define Q_ANGLE 0.001
 #define Q_GYRO  0.003
- 
+
 /*
  * Our two states, the angle and the gyro bias.  As a byproduct of computing
  * the angle, we also have an unbiased angular rate available.   These are
@@ -83,10 +83,10 @@ static float dt;
  * determine how well the sensors are tracking the actual state.
  */
 static float P[2][2] = {{1, 0},
-				 {0, 1}};
+	{0, 1}};
 
 // Seconds
-void set_update_rate(float d) {
+void time_interval_update(float d) {
 	dt = d;
 }
 
@@ -100,26 +100,26 @@ void set_update_rate(float d) {
  *
  * Our state vector is:
  *
- *	X = [ angle, gyro_bias ]
+ *	  X = [ angle, gyro_bias ]
  *
  * It runs the state estimation forward via the state functions:
  *
- *	Xdot = [ angle_dot, gyro_bias_dot ]
+ *	  Xdot = [ angle_dot, gyro_bias_dot ]
  *
- *	angle_dot	= gyro - gyro_bias
- *	gyro_bias_dot	= 0
+ *	  angle_dot	   = gyro - gyro_bias
+ *	  gyro_bias_dot   = 0
  *
  * And updates the covariance matrix via the function:
  *
- *	Pdot = A*P + P*A' + Q
+ *	  Pdot = A*P + P*A' + Q
  *
  * A is the Jacobian of Xdot with respect to the states:
  *
- *	A = [ d(angle_dot)/d(angle)     d(angle_dot)/d(gyro_bias) ]
- *	    [ d(gyro_bias_dot)/d(angle) d(gyro_bias_dot)/d(gyro_bias) ]
+ *	  A = [ d(angle_dot)/d(angle)	 d(angle_dot)/d(gyro_bias) ]
+ *		  [ d(gyro_bias_dot)/d(angle) d(gyro_bias_dot)/d(gyro_bias) ]
  *
- *	  = [ 0 -1 ]
- *	    [ 0  0 ]
+ *		= [ 0 -1 ]
+ *		  [ 0  0 ]
  *
  * Due to the small CPU available on the microcontroller, we've
  * hand optimized the C code to only compute the terms that are
@@ -133,29 +133,29 @@ void set_update_rate(float d) {
 void state_update(const float q_m) {
 	// Unbias gyro
 	const float q = q_m - ygyro_bias;
-	
+
 	/*
 	 * Compute the derivative of the covariance matrix
 	 *
-	 *	Pdot = A*P + P*A' + Q
+	 *  Pdot = A*P + P*A' + Q
 	 *
 	 * We've hand computed the expansion of A = [ 0 -1, 0 0 ] multiplied
 	 * by P and P multiplied by A' = [ 0 0, -1, 0 ].  This is then added
 	 * to the diagonal elements of Q, which are Q_angle and Q_gyro.
 	 */
-	const float	Pdot[2 * 2] = 
+	const float Pdot[2 * 2] = 
 	{
 		Q_ANGLE - P[0][1] - P[1][0],	/* 0,0 */
-		- P[1][1],						/* 0,1 */
-		- P[1][1],						/* 1,0 */
-		Q_GYRO							/* 1,1 */
+		- P[1][1],											  /* 0,1 */
+		- P[1][1],											  /* 1,0 */
+		Q_GYRO												  /* 1,1 */
 	};
 
 	/*
 	 * Update our angle estimate
 	 * angle += angle_dot * dt
-	 *       += (gyro - gyro_bias) * dt
-	 *       += q * dt
+	 *	   += (gyro - gyro_bias) * dt
+	 *	   += q * dt
 	 */
 	angle += q * dt;
 
@@ -191,8 +191,8 @@ void state_update(const float q_m) {
  * is the Jacobian matrix of the measurement value with respect
  * to the states.  In this case, C is:
  *
- *	C = [ d(angle_m)/d(angle)  d(angle_m)/d(gyro_bias) ]
- *	  = [ 1 0 ]
+ *	  C = [ d(angle_m)/d(angle)  d(angle_m)/d(gyro_bias) ]
+ *		= [ 1 0 ]
  *
  * because the angle measurement directly corresponds to the angle
  * estimate and the angle measurement has no relation to the gyro
@@ -201,20 +201,20 @@ void state_update(const float q_m) {
 
 void kalman_update(const float ax_m, const float az_m) {
 	/* Compute our measured angle and the error in our estimate */
-	const float	angle_m = atan2( -az_m, ax_m );
-	const float	angle_err = angle_m - angle;
+	const float angle_m = atan2( ax_m, az_m );
+	const float angle_err = angle_m - angle;
 
 	/*
 	 * C_0 shows how the state measurement directly relates to
 	 * the state estimate.
- 	 *
+	 *
 	 * The C_1 shows that the state measurement does not relate
 	 * to the gyro bias estimate.  We don't actually use this, so
 	 * we comment it out.
 	 */
 
-	const float	C_0 = 1;
-	/* const float		C_1 = 0; */
+	const float C_0 = 1;
+	/* const float C_1 = 0; */
 
 	/*
 	 * PCt<2,1> = P<2,2> * C'<2,1>, which we use twice.  This makes
@@ -222,75 +222,75 @@ void kalman_update(const float ax_m, const float az_m) {
 	 * Note that C[0,1] = C_1 is zero, so we do not compute that
 	 * term.
 	 */
-	const float	PCt_0 = C_0 * P[0][0]; /* + C_1 * P[0][1] = 0 */
-	const float	PCt_1 = C_0 * P[1][0]; /* + C_1 * P[1][1] = 0 */
-		
+	const float PCt_0 = C_0 * P[0][0]; /* + C_1 * P[0][1] = 0 */
+	const float PCt_1 = C_0 * P[1][0]; /* + C_1 * P[1][1] = 0 */
+
 	/*
 	 * Compute the error estimate.  From the Kalman filter paper:
 	 * 
-	 *	E = C P C' + R
+	 *  E = C P C' + R
 	 * 
 	 * Dimensionally,
 	 *
-	 *	E<1,1> = C<1,2> P<2,2> C'<2,1> + R<1,1>
+	 *  E<1,1> = C<1,2> P<2,2> C'<2,1> + R<1,1>
 	 *
 	 * Again, note that C_1 is zero, so we do not compute the term.
 	 */
-	const float	E =
+	const float E =
 		R_ANGLE
 		+ C_0 * PCt_0
-	/*	+ C_1 * PCt_1 = 0 */
-	;
+		/*+ C_1 * PCt_1 = 0 */
+		;
 
 	/*
 	 * Compute the Kalman filter gains.  From the Kalman paper:
 	 *
-	 *	K = P C' inv(E)
+	 *  K = P C' inv(E)
 	 *
 	 * Dimensionally:
 	 *
-	 *	K<2,1> = P<2,2> C'<2,1> inv(E)<1,1>
+	 *  K<2,1> = P<2,2> C'<2,1> inv(E)<1,1>
 	 *
 	 * Luckilly, E is <1,1>, so the inverse of E is just 1/E.
 	 */
-	const float	K_0 = PCt_0 / E;
-	const float	K_1 = PCt_1 / E;
-		
+	const float K_0 = PCt_0 / E;
+	const float K_1 = PCt_1 / E;
+
 	/*
 	 * Update covariance matrix.  Again, from the Kalman filter paper:
 	 *
-	 *	P = P - K C P
+	 *  P = P - K C P
 	 *
 	 * Dimensionally:
 	 *
-	 *	P<2,2> -= K<2,1> C<1,2> P<2,2>
+	 *  P<2,2> -= K<2,1> C<1,2> P<2,2>
 	 *
 	 * We first compute t<1,2> = C P.  Note that:
 	 *
-	 *	t[0,0] = C[0,0] * P[0,0] + C[0,1] * P[1,0]
+	 *  t[0,0] = C[0,0] * P[0,0] + C[0,1] * P[1,0]
 	 *
 	 * But, since C_1 is zero, we have:
 	 *
-	 *	t[0,0] = C[0,0] * P[0,0] = PCt[0,0]
+	 *  t[0,0] = C[0,0] * P[0,0] = PCt[0,0]
 	 *
 	 * This saves us a floating point multiply.
 	 */
-	const float	t_0 = PCt_0; 			/* C_0 * P[0][0] + C_1 * P[1][0] */
-	const float	t_1 = C_0 * P[0][1];	/* + C_1 * P[1][1]  = 0 */
+	const float t_0 = PCt_0;			/* C_0 * P[0][0] + C_1 * P[1][0] */
+	const float t_1 = C_0 * P[0][1];	/* + C_1 * P[1][1]  = 0 */
 
 	P[0][0] -= K_0 * t_0;
 	P[0][1] -= K_0 * t_1;
 	P[1][0] -= K_1 * t_0;
 	P[1][1] -= K_1 * t_1;
-	
+
 	/*
 	 * Update our state estimate.  Again, from the Kalman paper:
 	 *
-	 *	X += K * err
+	 *  X += K * err
 	 *
 	 * And, dimensionally,
 	 *
-	 *	X<2> = X<2> + K<2,1> * err<1,1>
+	 *  X<2> = X<2> + K<2,1> * err<1,1>
 	 *
 	 * err is a measurement of the difference in the measured state
 	 * and the estimate state.  In our case, it is just the difference

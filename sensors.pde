@@ -12,8 +12,6 @@
    +100 power
  */
 
-#define DIV7      0.14285714285714 // answer to 1/7
-
 // sensor defines
 #define YGYRO 3
 #define YGYRO4 4
@@ -24,6 +22,12 @@
 
 // input defines
 #define OHSHITSWITCH 13
+
+// Gyro constants
+// 572.958 mV per rad per sec, 1.7453292 rad/sec max
+#define GYROTORAD4 .001846446 // radians per unit
+// 143 mV per deg per sec, 6.981317007975 rad/sec max
+#define GYROTORAD .0004608398  // degrees per unit
 
 float yaccl_reading;
 float zaccl_reading;
@@ -39,7 +43,7 @@ void init_sensors() {
 	analogReference(EXTERNAL);
 }
 
-void update_yaccl() {
+void read_yaccl() {
 	static float savgolay_filt[7];
 	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
 	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
@@ -57,7 +61,7 @@ void update_yaccl() {
 				 (-2*savgolay_filt[6]))/21.0; 
 }
 
-void update_zaccl() {
+void read_zaccl() {
 	static float savgolay_filt[7];
 	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
 	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
@@ -81,24 +85,32 @@ bool read_shit_switch() {
 
 void read_ygyro() {
 	ygyro_reading = 0;
-	for (i=0; i<7; i++) {
+	for (i=0; i<8; i++) {
 		ygyro_reading += analogRead(YGYRO4);
 	}
-	ygyro_reading *= DIV7;
+	ygyro_reading = ygyro_reading / 8 * GYROTORAD4;
+}
+
+void read_ygyro_large_range() {
+	ygyro_reading = 0;
+	for (i=0; i<8; i++) {
+		ygyro_reading += analogRead(YGYRO);
+	}
+	ygyro_reading = ygyro_reading / 8 * GYROTORAD;
 }
 
 void read_zgyro() {
 	zgyro_reading = 0;
-	for (i=0; i<7; i++) {
+	for (i=0; i<8; i++) {
 		zgyro_reading += analogRead(ZGYRO);
 	}
-	zgyro_reading *= DIV7;
+	zgyro_reading /= 8;
 }
 
 void read_turnpot() {
 	turnpot_reading = 0;
-	for (i=0; i<7; i++) {
+	for (i=0; i<8; i++) {
 		turnpot_reading += analogRead(TURNPOT);
 	}
-	turnpot_reading *= DIV7;
+	turnpot_reading /= 8;
 }
