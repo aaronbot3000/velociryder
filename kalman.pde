@@ -57,8 +57,10 @@
  * In this case, it indicates how much we trust the acceleromter
  * relative to the gyros.
  */
-#define Q_ANGLE 0.001
-#define Q_GYRO  0.003
+//#define Q_ANGLE 0.001
+//#define Q_GYRO  0.003
+#define Q_ANGLE 0.01
+#define Q_GYRO  0.03
 
 /*
  * Our two states, the angle and the gyro bias.  As a byproduct of computing
