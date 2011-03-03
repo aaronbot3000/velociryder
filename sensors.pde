@@ -39,6 +39,7 @@
 #define YGYRO4 4
 #define ZGYRO 5
 #define YACCL 1
+#define ZACCL 2
 #define TURNPOT 0
 
 // input defines
@@ -50,25 +51,46 @@ void init_sensors() {
 	analogReference(EXTERNAL);
 }
 
-float accl_filt;
-float accl_savgolay_filt[7];
-float read_accl() {
+float y_accl_filt;
+float y_accl_savgolay_filt[7];
+float read_y_accl() {
 	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
 	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
 	for (i=0; i<6; i++)
-		accl_savgolay_filt[i] = accl_savgolay_filt[i+1];
-	accl_savgolay_filt[6] = analogRead(YACCL);
+		y_accl_savgolay_filt[i] = y_accl_savgolay_filt[i+1];
+	y_accl_savgolay_filt[6] = analogRead(YACCL);
 
 	// Magic numbers!!!
-	accl_filt = ((-2*accl_savgolay_filt[0]) + 
-				 ( 3*accl_savgolay_filt[1]) + 
-				 ( 6*accl_savgolay_filt[2]) + 
-				 ( 7*accl_savgolay_filt[3]) + 
-				 ( 6*accl_savgolay_filt[4]) + 
-				 ( 3*accl_savgolay_filt[5]) + 
-				 (-2*accl_savgolay_filt[6]))/21.0; 
+	y_accl_filt = ((-2*y_accl_savgolay_filt[0]) + 
+				 ( 3*y_accl_savgolay_filt[1]) + 
+				 ( 6*y_accl_savgolay_filt[2]) + 
+				 ( 7*y_accl_savgolay_filt[3]) + 
+				 ( 6*y_accl_savgolay_filt[4]) + 
+				 ( 3*y_accl_savgolay_filt[5]) + 
+				 (-2*y_accl_savgolay_filt[6]))/21.0; 
 
-	return accl_filt;
+	return y_accl_filt;
+}
+
+float z_accl_filt;
+float z_accl_savgolay_filt[7];
+float read_z_accl() {
+	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
+	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
+	for (i=0; i<6; i++)
+		z_accl_savgolay_filt[i] = z_accl_savgolay_filt[i+1];
+	z_accl_savgolay_filt[6] = analogRead(YACCL);
+
+	// Magic numbers!!!
+	z_accl_filt = ((-2*z_accl_savgolay_filt[0]) + 
+				 ( 3*z_accl_savgolay_filt[1]) + 
+				 ( 6*z_accl_savgolay_filt[2]) + 
+				 ( 7*z_accl_savgolay_filt[3]) + 
+				 ( 6*z_accl_savgolay_filt[4]) + 
+				 ( 3*z_accl_savgolay_filt[5]) + 
+				 (-2*z_accl_savgolay_filt[6]))/21.0; 
+
+	return z_accl_filt;
 }
 
 bool read_shit_switch() {

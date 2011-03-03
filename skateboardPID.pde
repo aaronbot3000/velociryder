@@ -122,19 +122,17 @@ void process_steering() {
 
 uint8_t filt_ind;
 float filt_level[7];
-float old_level;
-float integ_buffer[INTEG_BUFFER_SIZE];
-uint8_t ibuffer_ind = 0;
-float integral = 0;
+
 float p_angle = 0;
 float ygyro;
 float accl;
+
 float time_since = 0;
 unsigned long time = 0;
 
 void run_magic() {
 	p_angle = angle;
-	accl = (read_accl() - ACCL_CENTER) * ACCLTODEG;
+	accl = (read_y_accl() - ACCL_CENTER) * ACCLTODEG;
 
 	time_since = (((float)(millis() - time))/1000.0);
 	time = millis();
@@ -165,12 +163,6 @@ void run_magic() {
 			 (-2*filt_level[6]))/21.0; 
 }
 
-void reset_integ_buffer() {
-	for (filt_ind = 0; filt_ind<INTEG_BUFFER_SIZE; filt_ind++)
-		integ_buffer[filt_ind] = 0;
-	integral = 0;
-}
-
 int16_t motorL;
 int16_t motorR;
 void set_motors()
@@ -184,7 +176,6 @@ void set_motors()
 
 	if (!read_shit_switch()) {
 		kill_motors();
-		reset_integ_buffer();
 		wait_for_level = true;
 	}
 
@@ -229,7 +220,7 @@ void printStatusToSerial()
 		Serial.print("yaccl: ");
 		Serial.println(accl);
 		Serial.print("yaccl_raw: ");
-		Serial.println(read_accl());
+		Serial.println(read_y_accl());
 		Serial.print("ygyro: ");
 		Serial.println(ygyro, 8);
 		Serial.print("time: ");
