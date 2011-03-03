@@ -18,21 +18,11 @@
    +100 power
  */
 
-#define DIV7      0.14285714285714 // answer to 1/7
-
-//IMU constants
-//ARef at 3.34 V
-// 100 deg per second
-// 2.5 mV per (deg per second)
-#define GYROTODEG 1.3046875  // degrees per unit
-
-// 400 deg per second
-// 10 mV per (deg per second)
-#define GYROTODEG4 3.26171875  // degrees per unit
-
-// .971V at 45 degrees
-// 2.074 at 135 degrees
-#define ACCLTODEG .26614205575702629  // degrees per unit
+// Gyro constants
+// 572.958 mV per rad per sec, 1.7453292 rad/sec max
+#define GYROTORAD4 .001846446 // radians per unit
+// 143 mV per deg per sec, 6.981317007975 rad/sec max
+#define GYROTORAD .0004608398  // degrees per unit
 
 // sensor defines
 #define YGYRO 3
@@ -97,29 +87,38 @@ bool read_shit_switch() {
 	return digitalRead(OHSHITSWITCH);
 }
 
+float ygyro4_sum;
+float read_ygyro4() {
+	ygyro4_sum = 0;
+	for (i=0; i<8; i++) {
+		ygyro4_sum += analogRead(YGYRO4);
+	}
+	return ygyro4_sum / 8 * GYROTORAD4;
+}
+
 float ygyro_sum;
 float read_ygyro() {
 	ygyro_sum = 0;
-	for (i=0; i<7; i++) {
-		ygyro_sum += analogRead(YGYRO4);
+	for (i=0; i<8; i++) {
+		ygyro_sum += analogRead(YGYRO);
 	}
-	return ygyro_sum * DIV7;
+	return ygyro_sum  / 8 * GYROTORAD;
 }
 
 float zgyro_sum;
 float read_zgyro() {
 	zgyro_sum = 0;
-	for (i=0; i<7; i++) {
+	for (i=0; i<8; i++) {
 		zgyro_sum += analogRead(ZGYRO);
 	}
-	return zgyro_sum * DIV7;
+	return zgyro_sum / 8;
 }
 
 float turnpot_sum;
 float read_turnpot() {
 	turnpot_sum = 0;
-	for (i=0; i<7; i++) {
+	for (i=0; i<8; i++) {
 		turnpot_sum += analogRead(TURNPOT);
 	}
-	return turnpot_sum * DIV7;
+	return turnpot_sum / 8;
 }
