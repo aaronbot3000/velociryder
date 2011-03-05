@@ -24,8 +24,8 @@
 
 // PID control constants
 // Can change by around 5 at a time
-#define PGAIN 180
-#define DGAIN 60 //120.321
+#define PGAIN 650
+#define DGAIN 450
 
 // Other control constants
 #define ACCL_MIX .005
@@ -42,7 +42,7 @@
 #define BAUD 57600
 static uint8_t counter;
 #endif
-static uint8_t i;
+static uint8_t i, j;
 
 static float steer_req;
 
@@ -72,7 +72,7 @@ void setup() {
 	init_motors();
 
 	// Build up some previous values
-	for (i=0; i<200; i++) {
+	for (int i=0; i<200; i++) {
 		run_magic();
 	}
 
@@ -89,6 +89,7 @@ void setup() {
 
 	// Wait for user to level board
 	wait_for_level = true;
+
 
 	// the turnpot's value at center is different when at rest and when stood on
 	// So take the reference point after the user is on the board
@@ -127,15 +128,15 @@ void process_steering() {
 	}
 }
 
+float accl_angle;
 
 void run_magic() {
 	static float p_angle = 0;
 	static float filt_level[7];
-	static float time_since = 0;
+	static unsigned long time = 0;
 
 	float gyro;
-	float accl_angle;
-	unsigned long time = 0;
+	float time_since = 0;
 
 	p_angle = angle;
 
@@ -165,8 +166,8 @@ void run_magic() {
 	level += DGAIN * (angle - p_angle);
 
 	// Testing the Savitsky Golay filter for motor levels as well
-	for (i=0; i<6; i++) {
-		filt_level[i] = filt_level[i+1];
+	for (j=0; j<6; j++) {
+		filt_level[j] = filt_level[j+1];
 	}
 	filt_level[6] = level;
 
@@ -229,12 +230,16 @@ void printStatusToSerial()
 		Serial.println(level);
 		Serial.print("ang: ");
 		Serial.println(angle);
+		Serial.print("atan2: ");
+		Serial.println(accl_angle);
 		Serial.print("gyro4: ");
 		Serial.println((ygyro4_sum - ygyro4_ref), 8);
 		Serial.print("gyro: ");
 		Serial.println((ygyro_sum - ygyro_ref), 8);
 		Serial.print("yaccl: ");
 		Serial.println(yaccl_filt);
+		Serial.print("zaccl: ");
+		Serial.println(zaccl_filt);
 		Serial.print("steer: ");
 		Serial.println(turnpot_sum - turnpot_ref);
 		Serial.print("steer_req: ");

@@ -1,5 +1,5 @@
 // TODO: Add balance point shift compensation for acceleration and 
-// deceleration. Check by seeing change jn level
+// deceleration. Check by seeing change kn level
 
 // Changeables
 //#define OCCASIONALDEBUG
@@ -32,10 +32,10 @@
 #define ZACCL 2
 #define TURNPOT 0
 
-// jnput defines
+// knput defines
 #define OHSHITSWITCH 13
 
-uint8_t j;
+uint8_t k;
 
 float yaccl_filt;
 float yaccl_savgolay_filt[7];
@@ -58,13 +58,13 @@ bool read_shit_switch() {
 
 void read_yaccl() {
 	/*
-	Savitsky Golay filter for accelerometer readings. It js better than a 
-	simple rolling average which js always out of date. SG filter looks at
-	trend of last few readings, projects a curve jnto the future, then takes 
+	Savitsky Golay filter for accelerometer readings. It ks better than a 
+	simple rolling average which ks always out of date. SG filter looks at
+	trend of last few readings, prokects a curve knto the future, then takes 
 	mean of whole lot, giving you a more "current" value
 	*/
-	for (j=0; j<6; j++)
-		yaccl_savgolay_filt[i] = yaccl_savgolay_filt[i+1];
+	for (k=0; k<6; k++)
+		yaccl_savgolay_filt[k] = yaccl_savgolay_filt[k+1];
 	yaccl_savgolay_filt[6] = analogRead(YACCL);
 
 	// Magic numbers!!!
@@ -79,8 +79,8 @@ void read_yaccl() {
 
 void read_zaccl() {
 	// S-G filter again
-	for (j=0; j<6; j++)
-		zaccl_savgolay_filt[i] = zaccl_savgolay_filt[i+1];
+	for (k=0; k<6; k++)
+		zaccl_savgolay_filt[k] = zaccl_savgolay_filt[k+1];
 	zaccl_savgolay_filt[6] = analogRead(ZACCL);
 
 	// Magic numbers!!!
@@ -95,7 +95,7 @@ void read_zaccl() {
 
 void read_ygyro4() {
 	ygyro4_sum = 0;
-	for (j=0; j<8; j++) {
+	for (k=0; k<8; k++) {
 		ygyro4_sum += analogRead(YGYRO4);
 	}
 	ygyro4_sum = ygyro4_sum / 8 * GYROTORAD4;
@@ -103,7 +103,7 @@ void read_ygyro4() {
 
 void read_ygyro() {
 	ygyro_sum = 0;
-	for (j=0; j<8; j++) {
+	for (k=0; k<8; k++) {
 		ygyro_sum += analogRead(YGYRO);
 	}
 	ygyro_sum = ygyro_sum / 8 * GYROTORAD;
@@ -111,7 +111,7 @@ void read_ygyro() {
 
 void read_zgyro() {
 	zgyro_sum = 0;
-	for (j=0; j<8; j++) {
+	for (k=0; k<8; k++) {
 		zgyro_sum += analogRead(ZGYRO);
 	}
 	zgyro_sum = zgyro_sum / 8;
@@ -119,7 +119,7 @@ void read_zgyro() {
 
 void read_turnpot() {
 	turnpot_sum = 0;
-	for (j=0; j<8; j++) {
+	for (k=0; k<8; k++) {
 		turnpot_sum += analogRead(TURNPOT);
 	}
 	turnpot_sum = turnpot_sum / 8;
