@@ -1,4 +1,5 @@
 #include <SoftwareSerial.h>
+#include <math.h>
 
 #define OCCASIONALDEBUG
 
@@ -21,26 +22,13 @@
 // Accelerometer center point
 #define ACCL_CENTER 500   // units
 
-// Balance adjust
-#define MAXBALANCE 90  // units
-#define MINBALANCE -90 // units
-#define D_BALANCE 0.8 // units
-
-#define GYRO_REDUC 0.33
-
 // PID control constants
-#define PGAIN 7.8
-#define IGAIN 0 //0.03
-#define DGAIN 2.1
-
-#define INTEG_BUFFER_SIZE 128
+// Can change by around 5 at a time
+#define PGAIN 180
+#define DGAIN 60 //120.321
 
 // Other control constants
 #define ACCL_MIX .005
-#define MGAIN 1.6
-
-#define GYROTODEG 1.3046875  // degrees per unit
-#define ACCLTODEG .26614205575702629  // degrees per unit
 
 // Turning constants
 #define TURNPOT_MARGIN 28
@@ -57,6 +45,7 @@ uint8_t counter;
 
 float steer_req;
 float balance_trim;
+float ygyro4_ref;
 float ygyro_ref;
 float zgyro_ref;
 float turnpot_ref;
@@ -81,6 +70,7 @@ void setup() {
 	// 5 seconds may seem long but it doesn't work too well unless its 5 seconds
 	//delay (5000);
 
+	ygyro4_ref = read_ygyro4();
 	ygyro_ref = read_ygyro();
 	zgyro_ref = read_zgyro();
 
@@ -124,22 +114,23 @@ uint8_t filt_ind;
 float filt_level[7];
 
 float p_angle = 0;
-float ygyro;
-float accl;
+float ygyro4;
+float accl_angle;
 
 float time_since = 0;
 unsigned long time = 0;
 
 void run_magic() {
 	p_angle = angle;
-	accl = (read_y_accl() - ACCL_CENTER) * ACCLTODEG;
 
 	time_since = (((float)(millis() - time))/1000.0);
 	time = millis();
 
-	ygyro = GYRO_REDUC * (read_ygyro() - ygyro_ref) * GYROTODEG * time_since;
+	ygyro4 = (read_ygyro4() - ygyro4_ref) * time_since;
+	
+	accl_angle = atan2(read_yaccl() - ACCL_CENTER, read_zaccl() - ACCL_CENTER);
 
-	angle = ((angle + ygyro) * (1 - ACCL_MIX)) + (accl * ACCL_MIX);
+	angle = ((angle + ygyro4) * (1 - ACCL_MIX)) + (accl_angle * ACCL_MIX);
 	
 	// P
 	level = PGAIN * angle;
@@ -167,9 +158,8 @@ int16_t motorL;
 int16_t motorR;
 void set_motors()
 {
-	motorL = MGAIN * level + steer_req;
-	motorR = MGAIN * level - steer_req;
-
+	motorL = level + steer_req;
+	motorR = level - steer_req;
 
 	motorL = constrain(motorL, -100, 100);
 	motorR = constrain(motorR, -100, 100);
@@ -215,14 +205,16 @@ void printStatusToSerial()
 		Serial.println(level);
 		Serial.print("ang: ");
 		Serial.println(angle);
+		Serial.print("gyro4: ");
+		Serial.println((read_ygyro4()-ygyro4_ref), 8);
 		Serial.print("gyro: ");
-		Serial.println((read_ygyro()-ygyro_ref) * GYROTODEG);
+		Serial.println((read_ygyro()-ygyro_ref), 8);
 		Serial.print("yaccl: ");
-		Serial.println(accl);
+		Serial.println(accl_angle);
 		Serial.print("yaccl_raw: ");
-		Serial.println(read_y_accl());
-		Serial.print("ygyro: ");
-		Serial.println(ygyro, 8);
+		Serial.println(read_yaccl());
+		Serial.print("ygyro4: ");
+		Serial.println(ygyro4, 8);
 		Serial.print("time: ");
 		Serial.println(time_since, 8);
 		Serial.print("steer: ");

@@ -20,9 +20,9 @@
 
 // Gyro constants
 // 572.958 mV per rad per sec, 1.7453292 rad/sec max
-#define GYROTORAD4 .001846446 // radians per unit
+#define GYROTORAD4 .005624596 // radians per second-unit
 // 143 mV per deg per sec, 6.981317007975 rad/sec max
-#define GYROTORAD .0004608398  // degrees per unit
+#define GYROTORAD   .02249838 // radians per second-unit
 
 // sensor defines
 #define YGYRO 3
@@ -41,46 +41,46 @@ void init_sensors() {
 	analogReference(EXTERNAL);
 }
 
-float y_accl_filt;
-float y_accl_savgolay_filt[7];
-float read_y_accl() {
+float yaccl_filt;
+float yaccl_savgolay_filt[7];
+float read_yaccl() {
 	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
 	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
 	for (i=0; i<6; i++)
-		y_accl_savgolay_filt[i] = y_accl_savgolay_filt[i+1];
-	y_accl_savgolay_filt[6] = analogRead(YACCL);
+		yaccl_savgolay_filt[i] = yaccl_savgolay_filt[i+1];
+	yaccl_savgolay_filt[6] = analogRead(YACCL);
 
 	// Magic numbers!!!
-	y_accl_filt = ((-2*y_accl_savgolay_filt[0]) + 
-				 ( 3*y_accl_savgolay_filt[1]) + 
-				 ( 6*y_accl_savgolay_filt[2]) + 
-				 ( 7*y_accl_savgolay_filt[3]) + 
-				 ( 6*y_accl_savgolay_filt[4]) + 
-				 ( 3*y_accl_savgolay_filt[5]) + 
-				 (-2*y_accl_savgolay_filt[6]))/21.0; 
+	yaccl_filt = ((-2*yaccl_savgolay_filt[0]) + 
+				 ( 3*yaccl_savgolay_filt[1]) + 
+				 ( 6*yaccl_savgolay_filt[2]) + 
+				 ( 7*yaccl_savgolay_filt[3]) + 
+				 ( 6*yaccl_savgolay_filt[4]) + 
+				 ( 3*yaccl_savgolay_filt[5]) + 
+				 (-2*yaccl_savgolay_filt[6]))/21.0; 
 
-	return y_accl_filt;
+	return yaccl_filt;
 }
 
-float z_accl_filt;
-float z_accl_savgolay_filt[7];
-float read_z_accl() {
+float zaccl_filt;
+float zaccl_savgolay_filt[7];
+float read_zaccl() {
 	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
 	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
 	for (i=0; i<6; i++)
-		z_accl_savgolay_filt[i] = z_accl_savgolay_filt[i+1];
-	z_accl_savgolay_filt[6] = analogRead(YACCL);
+		zaccl_savgolay_filt[i] = zaccl_savgolay_filt[i+1];
+	zaccl_savgolay_filt[6] = analogRead(ZACCL);
 
 	// Magic numbers!!!
-	z_accl_filt = ((-2*z_accl_savgolay_filt[0]) + 
-				 ( 3*z_accl_savgolay_filt[1]) + 
-				 ( 6*z_accl_savgolay_filt[2]) + 
-				 ( 7*z_accl_savgolay_filt[3]) + 
-				 ( 6*z_accl_savgolay_filt[4]) + 
-				 ( 3*z_accl_savgolay_filt[5]) + 
-				 (-2*z_accl_savgolay_filt[6]))/21.0; 
+	zaccl_filt = ((-2*zaccl_savgolay_filt[0]) + 
+				 ( 3*zaccl_savgolay_filt[1]) + 
+				 ( 6*zaccl_savgolay_filt[2]) + 
+				 ( 7*zaccl_savgolay_filt[3]) + 
+				 ( 6*zaccl_savgolay_filt[4]) + 
+				 ( 3*zaccl_savgolay_filt[5]) + 
+				 (-2*zaccl_savgolay_filt[6]))/21.0; 
 
-	return z_accl_filt;
+	return zaccl_filt;
 }
 
 bool read_shit_switch() {
