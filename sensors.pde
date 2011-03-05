@@ -1,5 +1,5 @@
 // TODO: Add balance point shift compensation for acceleration and 
-// deceleration. Check by seeing change in level
+// deceleration. Check by seeing change jn level
 
 // Changeables
 //#define OCCASIONALDEBUG
@@ -32,21 +32,38 @@
 #define ZACCL 2
 #define TURNPOT 0
 
-// input defines
+// jnput defines
 #define OHSHITSWITCH 13
 
-uint8_t i;
+uint8_t j;
+
+float yaccl_filt;
+float yaccl_savgolay_filt[7];
+
+float zaccl_filt;
+float zaccl_savgolay_filt[7];
+
+float ygyro4_sum;
+float ygyro_sum;
+float zgyro_sum;
+float turnpot_sum;
 
 void init_sensors() {
 	analogReference(EXTERNAL);
 }
 
-float yaccl_filt;
-float yaccl_savgolay_filt[7];
-float read_yaccl() {
-	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
-	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
-	for (i=0; i<6; i++)
+bool read_shit_switch() {
+	return digitalRead(OHSHITSWITCH);
+}
+
+void read_yaccl() {
+	/*
+	Savitsky Golay filter for accelerometer readings. It js better than a 
+	simple rolling average which js always out of date. SG filter looks at
+	trend of last few readings, projects a curve jnto the future, then takes 
+	mean of whole lot, giving you a more "current" value
+	*/
+	for (j=0; j<6; j++)
 		yaccl_savgolay_filt[i] = yaccl_savgolay_filt[i+1];
 	yaccl_savgolay_filt[6] = analogRead(YACCL);
 
@@ -58,16 +75,11 @@ float read_yaccl() {
 				 ( 6*yaccl_savgolay_filt[4]) + 
 				 ( 3*yaccl_savgolay_filt[5]) + 
 				 (-2*yaccl_savgolay_filt[6]))/21.0; 
-
-	return yaccl_filt;
 }
 
-float zaccl_filt;
-float zaccl_savgolay_filt[7];
-float read_zaccl() {
-	// Savitsky Golay filter for accelerometer readings. It is better than a simple rolling average which is always out of date.
-	// SG filter looks at trend of last few readings, projects a curve into the future, then takes mean of whole lot, giving you a more "current" value
-	for (i=0; i<6; i++)
+void read_zaccl() {
+	// S-G filter again
+	for (j=0; j<6; j++)
 		zaccl_savgolay_filt[i] = zaccl_savgolay_filt[i+1];
 	zaccl_savgolay_filt[6] = analogRead(ZACCL);
 
@@ -79,46 +91,36 @@ float read_zaccl() {
 				 ( 6*zaccl_savgolay_filt[4]) + 
 				 ( 3*zaccl_savgolay_filt[5]) + 
 				 (-2*zaccl_savgolay_filt[6]))/21.0; 
-
-	return zaccl_filt;
 }
 
-bool read_shit_switch() {
-	return digitalRead(OHSHITSWITCH);
-}
-
-float ygyro4_sum;
-float read_ygyro4() {
+void read_ygyro4() {
 	ygyro4_sum = 0;
-	for (i=0; i<8; i++) {
+	for (j=0; j<8; j++) {
 		ygyro4_sum += analogRead(YGYRO4);
 	}
-	return ygyro4_sum / 8 * GYROTORAD4;
+	ygyro4_sum = ygyro4_sum / 8 * GYROTORAD4;
 }
 
-float ygyro_sum;
-float read_ygyro() {
+void read_ygyro() {
 	ygyro_sum = 0;
-	for (i=0; i<8; i++) {
+	for (j=0; j<8; j++) {
 		ygyro_sum += analogRead(YGYRO);
 	}
-	return ygyro_sum  / 8 * GYROTORAD;
+	ygyro_sum = ygyro_sum / 8 * GYROTORAD;
 }
 
-float zgyro_sum;
-float read_zgyro() {
+void read_zgyro() {
 	zgyro_sum = 0;
-	for (i=0; i<8; i++) {
+	for (j=0; j<8; j++) {
 		zgyro_sum += analogRead(ZGYRO);
 	}
-	return zgyro_sum / 8;
+	zgyro_sum = zgyro_sum / 8;
 }
 
-float turnpot_sum;
-float read_turnpot() {
+void read_turnpot() {
 	turnpot_sum = 0;
-	for (i=0; i<8; i++) {
+	for (j=0; j<8; j++) {
 		turnpot_sum += analogRead(TURNPOT);
 	}
-	return turnpot_sum / 8;
+	turnpot_sum = turnpot_sum / 8;
 }

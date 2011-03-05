@@ -40,19 +40,28 @@
 
 #ifdef OCCASIONALDEBUG
 #define BAUD 57600
-uint8_t counter;
+static uint8_t counter;
 #endif
+static uint8_t i;
 
-float steer_req;
-float balance_trim;
-float ygyro4_ref;
-float ygyro_ref;
-float zgyro_ref;
-float turnpot_ref;
-float level;
-float angle = 0;
+static float steer_req;
 
-bool wait_for_level = false;
+static float ygyro4_ref;
+static float ygyro_ref;
+static float zgyro_ref;
+static float turnpot_ref;
+
+static float level;
+static float angle = 0;
+
+static bool wait_for_level = false;
+
+extern float yaccl_filt;
+extern float zaccl_filt;
+extern float ygyro4_sum;
+extern float ygyro_sum;
+extern float zgyro_sum;
+extern float turnpot_sum;
 
 void setup() {
 #ifdef OCCASIONALDEBUG
@@ -63,36 +72,44 @@ void setup() {
 	init_motors();
 
 	// Build up some previous values
-	for (uint8_t i=0; i<200; i++) {
+	for (i=0; i<200; i++) {
 		run_magic();
 	}
 
 	// 5 seconds may seem long but it doesn't work too well unless its 5 seconds
 	//delay (5000);
 
-	ygyro4_ref = read_ygyro4();
-	ygyro_ref = read_ygyro();
-	zgyro_ref = read_zgyro();
+	read_ygyro4();
+	read_ygyro();
+	read_zgyro();
+
+	ygyro4_ref = ygyro4_sum;
+	ygyro_ref = ygyro_sum;
+	zgyro_ref = zgyro_sum;
 
 	// Wait for user to level board
 	wait_for_level = true;
 
 	// the turnpot's value at center is different when at rest and when stood on
 	// So take the reference point after the user is on the board
-	turnpot_ref = read_turnpot();
+	read_turnpot();
+	turnpot_ref = turnpot_sum;
 
 	level = 0;
 	angle = 0;
 }
 
-float zgyro, steer;
 void process_steering() {
-	// steering here
-	zgyro = (read_zgyro() - zgyro_ref);
-	steer = -(read_turnpot() - turnpot_ref);
+	float zgyro, steer;
+
+	read_turnpot();
+	steer = -(turnpot_sum - turnpot_ref);
 
 	// If going straight
 	if (abs(steer) <= TURNPOT_MARGIN) {
+		read_zgyro();
+		zgyro = (zgyro_sum - zgyro_ref);
+
 		if (abs(zgyro) > STEER_GYRO_MARGIN)
 			steer_req = STEER_CORRECT_POWER * zgyro;
 		else
@@ -110,27 +127,36 @@ void process_steering() {
 	}
 }
 
-uint8_t filt_ind;
-float filt_level[7];
-
-float p_angle = 0;
-float ygyro4;
-float accl_angle;
-
-float time_since = 0;
-unsigned long time = 0;
 
 void run_magic() {
+	static float p_angle = 0;
+	static float filt_level[7];
+	static float time_since = 0;
+
+	float gyro;
+	float accl_angle;
+	unsigned long time = 0;
+
 	p_angle = angle;
 
 	time_since = (((float)(millis() - time))/1000.0);
 	time = millis();
 
-	ygyro4 = (read_ygyro4() - ygyro4_ref) * time_since;
-	
-	accl_angle = atan2(read_yaccl() - ACCL_CENTER, read_zaccl() - ACCL_CENTER);
+	read_yaccl();
+	read_zaccl();
+	read_ygyro4();
 
-	angle = ((angle + ygyro4) * (1 - ACCL_MIX)) + (accl_angle * ACCL_MIX);
+	if (abs(ygyro4_sum - ygyro4_ref) < 1.5) {
+		read_ygyro();
+		gyro = (ygyro_sum - ygyro_ref) * time_since;
+	}
+	else {
+		gyro = (ygyro4_sum - ygyro4_ref) * time_since;
+	}
+
+	accl_angle = atan2(yaccl_filt - ACCL_CENTER, zaccl_filt - ACCL_CENTER);
+
+	angle = ((angle + gyro) * (1 - ACCL_MIX)) + (accl_angle * ACCL_MIX);
 	
 	// P
 	level = PGAIN * angle;
@@ -139,8 +165,8 @@ void run_magic() {
 	level += DGAIN * (angle - p_angle);
 
 	// Testing the Savitsky Golay filter for motor levels as well
-	for (filt_ind=0; filt_ind<6; filt_ind++) {
-		filt_level[filt_ind] = filt_level[filt_ind+1];
+	for (i=0; i<6; i++) {
+		filt_level[i] = filt_level[i+1];
 	}
 	filt_level[6] = level;
 
@@ -154,12 +180,10 @@ void run_magic() {
 			 (-2*filt_level[6]))/21.0; 
 }
 
-int16_t motorL;
-int16_t motorR;
 void set_motors()
 {
-	motorL = level + steer_req;
-	motorR = level - steer_req;
+	int16_t motorL = level + steer_req;
+	int16_t motorR = level - steer_req;
 
 	motorL = constrain(motorL, -100, 100);
 	motorR = constrain(motorR, -100, 100);
@@ -206,27 +230,19 @@ void printStatusToSerial()
 		Serial.print("ang: ");
 		Serial.println(angle);
 		Serial.print("gyro4: ");
-		Serial.println((read_ygyro4()-ygyro4_ref), 8);
+		Serial.println((ygyro4_sum - ygyro4_ref), 8);
 		Serial.print("gyro: ");
-		Serial.println((read_ygyro()-ygyro_ref), 8);
+		Serial.println((ygyro_sum - ygyro_ref), 8);
 		Serial.print("yaccl: ");
-		Serial.println(accl_angle);
-		Serial.print("yaccl_raw: ");
-		Serial.println(read_yaccl());
-		Serial.print("ygyro4: ");
-		Serial.println(ygyro4, 8);
-		Serial.print("time: ");
-		Serial.println(time_since, 8);
+		Serial.println(yaccl_filt);
 		Serial.print("steer: ");
-		Serial.println(steer);
+		Serial.println(turnpot_sum - turnpot_ref);
 		Serial.print("steer_req: ");
 		Serial.println(steer_req);
 		Serial.print("wait level: ");
 		Serial.println(wait_for_level);
 		Serial.print("zgyro: ");
-		Serial.println(zgyro);
-		Serial.print("tpot: ");
-		Serial.println(read_turnpot());
+		Serial.println(zgyro_sum);
 	}
 }
 #endif

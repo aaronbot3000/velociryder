@@ -2,7 +2,6 @@
 #define MOTOR_TX_PIN 11
 #define MOTOR_RX_PIN 6
 
-// motor overspeed defines
 #define SABER_BAUDRATE 9600
 
 #define MOTOR1_MAX_FRONT 1
@@ -14,6 +13,7 @@
 #define STOP 0
 
 SoftwareSerial motors = SoftwareSerial(MOTOR_RX_PIN, MOTOR_TX_PIN);
+static float softStartMult = 1;
 
 void init_motors() {
 	pinMode(MOTOR_TX_PIN, OUTPUT);
@@ -22,7 +22,6 @@ void init_motors() {
 	motors.print(STOP, BYTE);
 }
 
-float softStartMult = 1;
 void send_motor_command(int16_t motorL, int16_t motorR) {
 	// Slowly come back from a killswitch release
 	if (softStartMult < 1)
@@ -38,8 +37,6 @@ void send_motor_command(int16_t motorL, int16_t motorR) {
 }
 
 void kill_motors() {
-	motorL = 0;
-	motorR = 0;
 	softStartMult = .7;
 	motors.print(STOP, BYTE);
 }
