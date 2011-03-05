@@ -19,13 +19,13 @@
 //+ = tip forward
 //- = tip backward
 
-// Accelerometer center point
-#define ACCL_CENTER 500   // units
 
 // PID control constants
 // Can change by around 5 at a time
 #define PGAIN 650
 #define DGAIN 450
+
+#define P3MULT 100
 
 // Other control constants
 #define ACCL_MIX .008
@@ -160,7 +160,7 @@ void run_magic() {
 	angle = ((angle + gyro) * (1 - ACCL_MIX)) + (accl_angle * ACCL_MIX);
 
 	// P
-	level = PGAIN * (175*angle*angle*angle + angle);
+	level = PGAIN * (P3MULT * angle * angle * angle + angle);
 
 	// D
 	level += DGAIN * (angle - p_angle);
