@@ -24,6 +24,12 @@
 // 143 mV per deg per sec, 6.981317007975 rad/sec max
 #define GYROTORAD   .02249838 // radians per second-unit
 
+// 400 at 0.392 radians
+#define ACCLTORAD .00392
+
+// Accelerometer center point
+#define ACCL_CENTER 500   // units
+
 // sensor defines
 #define YGYRO 3
 #define YGYRO4 4
@@ -65,7 +71,7 @@ void read_yaccl() {
 	*/
 	for (k=0; k<6; k++)
 		yaccl_savgolay_filt[k] = yaccl_savgolay_filt[k+1];
-	yaccl_savgolay_filt[6] = analogRead(YACCL);
+	yaccl_savgolay_filt[6] = analogRead(YACCL) - ACCL_CENTER;
 
 	// Magic numbers!!!
 	yaccl_filt = ((-2*yaccl_savgolay_filt[0]) + 
@@ -75,6 +81,7 @@ void read_yaccl() {
 				 ( 6*yaccl_savgolay_filt[4]) + 
 				 ( 3*yaccl_savgolay_filt[5]) + 
 				 (-2*yaccl_savgolay_filt[6]))/21.0; 
+	yaccl_filt *= ACCLTORAD;
 }
 
 void read_zaccl() {

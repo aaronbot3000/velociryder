@@ -129,7 +129,6 @@ void process_steering() {
 }
 
 float accl_angle;
-float avgfilt;
 
 void run_magic() {
 	static float p_angle = 0;
@@ -145,7 +144,6 @@ void run_magic() {
 	time = millis();
 
 	read_yaccl();
-	read_zaccl();
 	read_ygyro4();
 
 	if (abs(ygyro4_sum - ygyro4_ref) < 1.5) {
@@ -156,7 +154,8 @@ void run_magic() {
 		gyro = (ygyro4_sum - ygyro4_ref) * time_since;
 	}
 
-	accl_angle = atan2(yaccl_filt - ACCL_CENTER, zaccl_filt - ACCL_CENTER);
+	//accl_angle = atan2(yaccl_filt - ACCL_CENTER, zaccl_filt - ACCL_CENTER);
+	accl_angle = yaccl_filt;
 
 	angle = ((angle + gyro) * (1 - ACCL_MIX)) + (accl_angle * ACCL_MIX);
 
@@ -231,7 +230,7 @@ void printStatusToSerial()
 		Serial.println(level);
 		Serial.print("ang: ");
 		Serial.println(angle);
-		Serial.print("atan2: ");
+		Serial.print("accl_angle: ");
 		Serial.println(accl_angle);
 		Serial.print("gyro4: ");
 		Serial.println((ygyro4_sum - ygyro4_ref), 8);
