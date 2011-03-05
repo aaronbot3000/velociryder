@@ -28,7 +28,7 @@
 #define DGAIN 450
 
 // Other control constants
-#define ACCL_MIX .005
+#define ACCL_MIX .008
 
 // Turning constants
 #define TURNPOT_MARGIN 28
@@ -129,6 +129,7 @@ void process_steering() {
 }
 
 float accl_angle;
+float avgfilt;
 
 void run_magic() {
 	static float p_angle = 0;
@@ -158,9 +159,9 @@ void run_magic() {
 	accl_angle = atan2(yaccl_filt - ACCL_CENTER, zaccl_filt - ACCL_CENTER);
 
 	angle = ((angle + gyro) * (1 - ACCL_MIX)) + (accl_angle * ACCL_MIX);
-	
+
 	// P
-	level = PGAIN * angle;
+	level = PGAIN * (175*angle*angle*angle + angle);
 
 	// D
 	level += DGAIN * (angle - p_angle);
