@@ -30,6 +30,8 @@
 // Accelerometer center point
 #define ACCL_CENTER 500   // units
 
+#define YACCL_AVG_LEN 8
+
 // sensor defines
 #define YGYRO 3
 #define YGYRO4 4
@@ -41,13 +43,10 @@
 // knput defines
 #define OHSHITSWITCH 13
 
-uint8_t k;
+static uint8_t k;
 
 float yaccl_filt;
-float yaccl_savgolay_filt[7];
-
 float zaccl_filt;
-float zaccl_savgolay_filt[7];
 
 float ygyro4_sum;
 float ygyro_sum;
@@ -63,28 +62,29 @@ bool read_shit_switch() {
 }
 
 void read_yaccl() {
-	/*
-	Savitsky Golay filter for accelerometer readings. It ks better than a 
-	simple rolling average which ks always out of date. SG filter looks at
-	trend of last few readings, prokects a curve knto the future, then takes 
-	mean of whole lot, giving you a more "current" value
-	*/
-	for (k=0; k<6; k++)
-		yaccl_savgolay_filt[k] = yaccl_savgolay_filt[k+1];
-	yaccl_savgolay_filt[6] = analogRead(YACCL) - ACCL_CENTER;
+	static int filt_ind = 0;
+	static float sum = 0;
+	static float yacclsum = 0;
+	static float yaccl_savgolay_filt[YACCL_AVG_LEN];
 
-	// Magic numbers!!!
-	yaccl_filt = ((-2*yaccl_savgolay_filt[0]) + 
-				 ( 3*yaccl_savgolay_filt[1]) + 
-				 ( 6*yaccl_savgolay_filt[2]) + 
-				 ( 7*yaccl_savgolay_filt[3]) + 
-				 ( 6*yaccl_savgolay_filt[4]) + 
-				 ( 3*yaccl_savgolay_filt[5]) + 
-				 (-2*yaccl_savgolay_filt[6]))/21.0; 
+	yacclsum = 0;
+	for (k=0; k<8; k++) {
+		yacclsum += analogRead(YACCL) - ACCL_CENTER;
+	}
+	yacclsum /= 8;
+
+	sum -= yaccl_savgolay_filt[filt_ind];
+	yaccl_savgolay_filt[filt_ind] = yacclsum;
+	sum += yaccl_savgolay_filt[filt_ind];
+
+	filt_ind = (++filt_ind) % YACCL_AVG_LEN;
+
+	yaccl_filt = sum / YACCL_AVG_LEN;
 	yaccl_filt *= ACCLTORAD;
 }
 
 void read_zaccl() {
+	static float zaccl_savgolay_filt[7];
 	// S-G filter again
 	for (k=0; k<6; k++)
 		zaccl_savgolay_filt[k] = zaccl_savgolay_filt[k+1];

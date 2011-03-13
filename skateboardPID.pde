@@ -25,7 +25,9 @@
 #define PGAIN 650
 #define DGAIN 450
 
-#define P3MULT 100
+#define P3MULT 135
+
+#define LVL_AVG_LEN 8
 
 // Other control constants
 #define ACCL_MIX .008
@@ -131,20 +133,31 @@ void process_steering() {
 float accl_angle;
 
 void run_magic() {
+	static float filt_level[LVL_AVG_LEN];
+	static float sum;
+	static int filt_ind;
+
 	static float p_angle = 0;
-	static float filt_level[7];
 	static unsigned long time = 0;
 
 	float gyro;
 	float time_since = 0;
+	float avg = 0;
 
 	p_angle = angle;
 
 	time_since = (((float)(millis() - time))/1000.0);
 	time = millis();
 
-	read_yaccl();
+#ifdef OCCASIONALDEBUG
+	if (counter == 0) {
+		Serial.print("Time: ");
+		Serial.println(time_since, 10);
+	}
+#endif
+
 	read_ygyro4();
+	read_yaccl();
 
 	if (abs(ygyro4_sum - ygyro4_ref) < 1.5) {
 		read_ygyro();
@@ -165,20 +178,13 @@ void run_magic() {
 	// D
 	level += DGAIN * (angle - p_angle);
 
-	// Testing the Savitsky Golay filter for motor levels as well
-	for (j=0; j<6; j++) {
-		filt_level[j] = filt_level[j+1];
-	}
-	filt_level[6] = level;
+	sum -= filt_level[filt_ind];
+	filt_level[filt_ind] = level;
+	sum += filt_level[filt_ind];
 
-	// Magic numbers!!!
-	level = ((-2*filt_level[0]) + 
-			 ( 3*filt_level[1]) + 
-			 ( 6*filt_level[2]) + 
-			 ( 7*filt_level[3]) + 
-			 ( 6*filt_level[4]) + 
-			 ( 3*filt_level[5]) + 
-			 (-2*filt_level[6]))/21.0; 
+	filt_ind = (++filt_ind) % LVL_AVG_LEN;
+	
+	level = sum / LVL_AVG_LEN;
 }
 
 void set_motors()
