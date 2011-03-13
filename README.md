@@ -3,7 +3,7 @@ Velociryder Code
 
 This is the software for the Velociryder, a self balancing two wheeled 
 skateboard, started as a side project and was then entered in Georgia Tech's
-2011 InVenture Prize. 
+2011 InVenture Prize. We made it all the way to the finals!
 
 Features
 --------
