@@ -1,3 +1,25 @@
+/*
+Copyright (C) 2011 by Aaron Fan
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
 // TODO: Add balance point shift compensation for acceleration and 
 // deceleration. Check by seeing change kn level
 
@@ -40,7 +62,7 @@
 #define ZACCL 2
 #define TURNPOT 0
 
-// knput defines
+// input defines
 #define OHSHITSWITCH 13
 
 static uint8_t k;
@@ -65,7 +87,7 @@ void read_yaccl() {
 	static int filt_ind = 0;
 	static float sum = 0;
 	static float yacclsum = 0;
-	static float yaccl_savgolay_filt[YACCL_AVG_LEN];
+	static float yaccl_filt[YACCL_AVG_LEN];
 
 	yacclsum = 0;
 	for (k=0; k<8; k++) {
@@ -73,9 +95,9 @@ void read_yaccl() {
 	}
 	yacclsum /= 8;
 
-	sum -= yaccl_savgolay_filt[filt_ind];
-	yaccl_savgolay_filt[filt_ind] = yacclsum;
-	sum += yaccl_savgolay_filt[filt_ind];
+	sum -= yaccl_filt[filt_ind];
+	yaccl_filt[filt_ind] = yacclsum;
+	sum += yaccl_filt[filt_ind];
 
 	filt_ind = (++filt_ind) % YACCL_AVG_LEN;
 
