@@ -30,6 +30,9 @@ Things you will probably need to tweak:
 * sensor defines: The pins the sensors are on
 * OHSHITSWITCH: killswitch pin
 
+### In motors.pde
+* However you control your motors
+
 This is Arduino source code. So put it in a directory called velociryder in 
 your sketchbook, fiddle, program, and go!
 
