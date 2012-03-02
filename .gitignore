@@ -10,3 +10,8 @@
 *.b#*
 *.s#*
 *.pdf
+*.ger
+*.gpi
+*.dri
+*.xln
+*.zip
