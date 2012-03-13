@@ -42,6 +42,7 @@ THE SOFTWARE.
 
 // Gyro constants
 // 572.958 mV per rad per sec, 1.7453292 rad/sec max
+//#define GYROTORAD4 .005624596 // radians per second-unit
 #define GYROTORAD4 .005624596 // radians per second-unit
 // 143 mV per deg per sec, 6.981317007975 rad/sec max
 #define GYROTORAD   .02249838 // radians per second-unit
@@ -55,20 +56,14 @@ THE SOFTWARE.
 #define YACCL_AVG_LEN 8
 
 // sensor defines
-#define YGYRO 3
-#define YGYRO4 4
-#define ZGYRO 5
-#define YACCL 1
-#define ZACCL 2
-#define TURNPOT 0
-
-// input defines
-#define OHSHITSWITCH 13
+#define YGYRO 2
+#define YGYRO4 1
+#define ZGYRO 0
+#define YACCL 3
 
 static uint8_t k;
 
 float yaccl_filt;
-float zaccl_filt;
 
 float ygyro4_sum;
 float ygyro_sum;
@@ -80,14 +75,15 @@ void init_sensors() {
 }
 
 bool read_shit_switch() {
-	return digitalRead(OHSHITSWITCH);
+	//return digitalRead(OHSHITSWITCH);
+	return 1;
 }
 
 void read_yaccl() {
 	static int filt_ind = 0;
 	static float sum = 0;
 	static float yacclsum = 0;
-	static float yaccl_filt[YACCL_AVG_LEN];
+	static float yaccl_filt_buf[YACCL_AVG_LEN];
 
 	yacclsum = 0;
 	for (k=0; k<8; k++) {
@@ -95,31 +91,14 @@ void read_yaccl() {
 	}
 	yacclsum /= 8;
 
-	sum -= yaccl_filt[filt_ind];
-	yaccl_filt[filt_ind] = yacclsum;
-	sum += yaccl_filt[filt_ind];
+	sum -= yaccl_filt_buf[filt_ind];
+	yaccl_filt_buf[filt_ind] = yacclsum;
+	sum += yaccl_filt_buf[filt_ind];
 
 	filt_ind = (++filt_ind) % YACCL_AVG_LEN;
 
 	yaccl_filt = sum / YACCL_AVG_LEN;
 	yaccl_filt *= ACCLTORAD;
-}
-
-void read_zaccl() {
-	static float zaccl_savgolay_filt[7];
-	// S-G filter again
-	for (k=0; k<6; k++)
-		zaccl_savgolay_filt[k] = zaccl_savgolay_filt[k+1];
-	zaccl_savgolay_filt[6] = analogRead(ZACCL);
-
-	// Magic numbers!!!
-	zaccl_filt = ((-2*zaccl_savgolay_filt[0]) + 
-				 ( 3*zaccl_savgolay_filt[1]) + 
-				 ( 6*zaccl_savgolay_filt[2]) + 
-				 ( 7*zaccl_savgolay_filt[3]) + 
-				 ( 6*zaccl_savgolay_filt[4]) + 
-				 ( 3*zaccl_savgolay_filt[5]) + 
-				 (-2*zaccl_savgolay_filt[6]))/21.0; 
 }
 
 void read_ygyro4() {
@@ -144,12 +123,4 @@ void read_zgyro() {
 		zgyro_sum += analogRead(ZGYRO);
 	}
 	zgyro_sum = zgyro_sum / 8;
-}
-
-void read_turnpot() {
-	turnpot_sum = 0;
-	for (k=0; k<8; k++) {
-		turnpot_sum += analogRead(TURNPOT);
-	}
-	turnpot_sum = turnpot_sum / 8;
 }

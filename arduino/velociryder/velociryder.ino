@@ -22,7 +22,6 @@ THE SOFTWARE.
 
 
 #include <SoftwareSerial.h>
-#include <math.h>
 
 #define OCCASIONALDEBUG
 
@@ -67,6 +66,7 @@ THE SOFTWARE.
 #define BAUD 57600
 static uint8_t counter;
 #endif
+
 static uint8_t i, j;
 
 static float steer_req;
@@ -118,13 +118,14 @@ void setup() {
 
 	// the turnpot's value at center is different when at rest and when stood on
 	// So take the reference point after the user is on the board
-	read_turnpot();
-	turnpot_ref = turnpot_sum;
+	//read_turnpot();
+	//turnpot_ref = turnpot_sum;
 
 	level = 0;
 	angle = 0;
 }
 
+/*
 void process_steering() {
 	float zgyro, steer;
 
@@ -152,6 +153,7 @@ void process_steering() {
 		steer_req = steer * STEER_POWER ;//* ((-abs(level) * (1-MIN_STEER)/100) + 1);
 	}
 }
+*/
 
 float accl_angle;
 
@@ -240,7 +242,7 @@ void set_motors()
 void loop()
 {
 	run_magic();
-	process_steering();
+	//process_steering();
 	set_motors();
 
 #ifdef OCCASIONALDEBUG
@@ -267,12 +269,12 @@ void printStatusToSerial()
 		Serial.println((ygyro_sum - ygyro_ref), 8);
 		Serial.print("yaccl: ");
 		Serial.println(yaccl_filt);
-		Serial.print("zaccl: ");
-		Serial.println(zaccl_filt);
+		/*
 		Serial.print("steer: ");
 		Serial.println(turnpot_sum - turnpot_ref);
 		Serial.print("steer_req: ");
 		Serial.println(steer_req);
+		*/
 		Serial.print("wait level: ");
 		Serial.println(wait_for_level);
 		Serial.print("zgyro: ");
